@@ -12,7 +12,7 @@ $bog_dobro_app $mol_book2_catalog
 			theme_dark \$mol_theme_dark
 	spreads *
 		\	
-			<= Bot $gd_bot
+			<= Bot $giper_bot
 				Space null
 				Sources null
 				Donate null
