@@ -41,10 +41,14 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    function $mol_fail(error) {
-        throw error;
+    const mod = require('module');
+    const internals = mod.builtinModules;
+    function $node_internal_check(name) {
+        if (name.startsWith('node:'))
+            return true;
+        return internals.includes(name);
     }
-    $.$mol_fail = $mol_fail;
+    $.$node_internal_check = $node_internal_check;
 })($ || ($ = {}));
 
 ;
@@ -60,6 +64,16 @@ var $;
         }
     }
     $.$mol_promise_like = $mol_promise_like;
+})($ || ($ = {}));
+
+;
+"use strict";
+var $;
+(function ($) {
+    function $mol_fail(error) {
+        throw error;
+    }
+    $.$mol_fail = $mol_fail;
 })($ || ($ = {}));
 
 ;
@@ -126,41 +140,32 @@ var $node = new Proxy({ require }, {
     get(target, name, wrapper) {
         if (target[name])
             return target[name];
-        if (name.startsWith('node:'))
+        const $$ = $;
+        if ($$.$node_internal_check(name, target))
             return target.require(name);
         if (name[0] === '.')
-            return target.require(name);
-        const mod = target.require('module');
-        if (mod.builtinModules.indexOf(name) >= 0)
             return target.require(name);
         try {
             target.require.resolve(name);
         }
         catch {
-            const $$ = $;
-            $$.$mol_exec('.', 'npm', 'install', '--omit=dev', name);
+            try {
+                $$.$mol_exec('.', 'npm', 'install', '--omit=dev', name);
+            }
+            catch (e) {
+                if ($$.$mol_promise_like(e))
+                    $$.$mol_fail_hidden(e);
+            }
             try {
                 $$.$mol_exec('.', 'npm', 'install', '--omit=dev', '@types/' + name);
             }
             catch (e) {
-                if ($$.$mol_fail_catch(e)) {
-                    $$.$mol_fail_log(e);
-                }
+                if ($$.$mol_promise_like(e))
+                    $$.$mol_fail_hidden(e);
+                $$.$mol_fail_log(e);
             }
         }
-        try {
-            return target.require(name);
-        }
-        catch (error) {
-            if ($.$mol_fail_catch(error) && error.code === 'ERR_REQUIRE_ESM') {
-                const module = cache.get(name);
-                if (module)
-                    return module;
-                throw Object.assign(import(name).then(module => cache.set(name, module)), { cause: error });
-            }
-            $.$mol_fail_log(error);
-            return null;
-        }
+        return target.require(name);
     },
     set(target, name, value) {
         target[name] = value;
@@ -3852,6 +3857,7 @@ var $;
 var $;
 (function ($) {
     $.$mol_gap = $mol_style_prop('mol_gap', [
+        'page',
         'block',
         'text',
         'round',
@@ -3864,7 +3870,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
+    $mol_style_attach("mol/gap/gap.css", ":root {\n\t--mol_gap_page: 3rem;\n\t--mol_gap_block: .75rem;\n\t--mol_gap_text: .5rem .75rem;\n\t--mol_gap_round: .25rem;\n\t--mol_gap_space: .25rem;\n\t--mol_gap_blur: .5rem;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -4288,7 +4294,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/view/view/view.css", "[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\toverscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
+    $mol_style_attach("mol/view/view/view.css", "[mol_view] {\n\ttransition-property: height, width, min-height, min-width, max-width, max-height, transform, scale, translate, rotate;\n\ttransition-duration: .2s;\n\ttransition-timing-function: ease-out;\n\t-webkit-appearance: none;\n\tbox-sizing: border-box;\n\tdisplay: flex;\n\tflex-shrink: 0;\n\tcontain: style;\n\tscrollbar-color: var(--mol_theme_line) transparent;\n\tscrollbar-width: thin;\n}\t\n\n[mol_view]::selection {\n\tbackground: var(--mol_theme_line);\n}\t\n\n[mol_view]::-webkit-scrollbar {\n\twidth: .25rem;\n\theight: .25rem;\n}\n\n[mol_view]::-webkit-scrollbar-corner {\n\tbackground-color: var(--mol_theme_line);\n}\n\n[mol_view]::-webkit-scrollbar-track {\n\tbackground-color: transparent;\n}\n\n[mol_view]::-webkit-scrollbar-thumb {\n\tbackground-color: var(--mol_theme_line);\n\tborder-radius: var(--mol_gap_round);\n}\n\n[mol_view] > * {\n\tword-break: inherit;\n}\n\n[mol_view_root] {\n\tmargin: 0;\n\tpadding: 0;\n\twidth: 100%;\n\theight: 100%;\n\tbox-sizing: border-box;\n\tfont-family: system-ui, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n\tfont-size: 1rem;\n\tline-height: 1.5rem;\n\t/* background: var(--mol_theme_back);\n\tcolor: var(--mol_theme_text); */\n\tcontain: unset; /** Fixes bg ignoring when applied to body on Chrome */\n\ttab-size: 4;\n\toverscroll-behavior: contain; /** Disable navigation gestures **/\n}\n\n@media print {\n\t[mol_view_root] {\n\t\theight: auto;\n\t}\n}\n[mol_view][mol_view_error]:not([mol_view_error=\"Promise\"], [mol_view_error=\"$mol_promise_blocker\"]) {\n\tbackground-image: repeating-linear-gradient(\n\t\t-45deg,\n\t\t#f92323,\n\t\t#f92323 .5rem,\n\t\t#ff3d3d .5rem,\n\t\t#ff3d3d 1.5rem\n\t);\n\tcolor: black;\n\talign-items: center;\n\tjustify-content: center;\n}\n\n@keyframes mol_view_wait {\n\tfrom {\n\t\topacity: .25;\n\t}\n\t20% {\n\t\topacity: .75;\n\t}\n\tto {\n\t\topacity: .25;\n\t}\n}\n\n:where([mol_view][mol_view_error=\"$mol_promise_blocker\"]),\n:where([mol_view][mol_view_error=\"Promise\"]) {\n\tbackground: var(--mol_theme_hover);\n}\n\n[mol_view][mol_view_error=\"Promise\"] {\n\tanimation: mol_view_wait 1s steps(20,end) infinite;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -5380,7 +5386,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("mol/pop/pop.view.css", "[mol_pop] {\n\tposition: relative;\n\tdisplay: inline-flex;\n}\n\n[mol_pop_bubble] {\n\tbox-shadow: 0 0 1rem hsla(0,0%,0%,.5);\n\tborder-radius: var(--mol_gap_round);\n\tposition: absolute;\n\tz-index: var(--mol_layer_popup);\n\tbackground: var(--mol_theme_back);\n\tmax-width: none;\n\tmax-height: none;\n\t/* overflow: hidden;\n\toverflow-y: scroll;\n\toverflow-y: overlay; */\n\tword-break: normal;\n\twidth: max-content;\n\t/* height: max-content; */\n\tflex-direction: column;\n\tmax-width: 80vw;\n\tmax-height: 80vw;\n\tcontain: paint;\n\ttransition-property: opacity;\n}\n\n:where( [mol_pop_bubble] > * ) {\n\tbackground: var(--mol_theme_card);\n}\n\n[mol_pop_bubble][mol_scroll] {\n\tbackground: var(--mol_theme_back);\n}\n\n[mol_pop_bubble]:focus {\n\toutline: none;\n}\n\n[mol_pop_align=\"suspense_suspense\"] {\n\topacity: 0;\n}\n\n[mol_pop_align=\"left_top\"] {\n\ttransform: translate(-100%);\n\tleft: 0;\n\tbottom: 0;\n}\n\n[mol_pop_align=\"left_center\"] {\n\ttransform: translate(-100%, -50%);\n\tleft: 0;\n\ttop: 50%;\n}\n\n[mol_pop_align=\"left_bottom\"] {\n\ttransform: translate(-100%);\n\tleft: 0;\n\ttop: 0;\n}\n\n[mol_pop_align=\"right_top\"] {\n\ttransform: translate(100%);\n\tright: 0;\n\tbottom: 0;\n}\n\n[mol_pop_align=\"right_center\"] {\n\ttransform: translate(100%, -50%);\n\tright: 0;\n\ttop: 50%;\n}\n\n[mol_pop_align=\"right_bottom\"] {\n\ttransform: translate(100%);\n\tright: 0;\n\ttop: 0;\n}\n\n[mol_pop_align=\"center\"] {\n\tleft: 50%;\n\ttop: 50%;\n\ttransform: translate(-50%, -50%);\n}\n\n[mol_pop_align=\"top_left\"] {\n\tright: 0;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"top_center\"] {\n\ttransform: translate(-50%);\n\tleft: 50%;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"top_right\"] {\n\tleft: 0;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"bottom_left\"] {\n\tright: 0;\n\ttop: 100%;\n}\n\n[mol_pop_align=\"bottom_center\"] {\n\ttransform: translate(-50%);\n\tleft: 50%;\n\ttop: 100%;\n}\n\n[mol_pop_align=\"bottom_right\"] {\n\tleft: 0;\n\ttop: 100%;\n}\n");
+    $mol_style_attach("mol/pop/pop.view.css", "[mol_pop] {\n\tposition: relative;\n\tdisplay: inline-flex;\n}\n\n[mol_pop_bubble] {\n\tbox-shadow: 0 0 1rem hsla(0,0%,0%,.5);\n\tborder-radius: var(--mol_gap_round);\n\tposition: absolute;\n\tz-index: var(--mol_layer_popup);\n\tbackground: var(--mol_theme_back);\n\tmax-width: none;\n\tmax-height: none;\n\t/* overflow: hidden;\n\toverflow-y: scroll;\n\toverflow-y: overlay; */\n\tword-break: normal;\n\twidth: max-content;\n\t/* height: max-content; */\n\tflex-direction: column;\n\tmax-width: calc( 100vw - var(--mol_gap_page) );\n\tmax-height: 80vw;\n\tcontain: paint;\n\ttransition-property: opacity;\n}\n\n:where( [mol_pop_bubble] > * ) {\n\tbackground: var(--mol_theme_card);\n}\n\n[mol_pop_bubble][mol_scroll] {\n\tbackground: var(--mol_theme_back);\n}\n\n[mol_pop_bubble]:focus {\n\toutline: none;\n}\n\n[mol_pop_align=\"suspense_suspense\"] {\n\topacity: 0;\n}\n\n[mol_pop_align=\"left_top\"] {\n\ttransform: translate(-100%);\n\tleft: 0;\n\tbottom: 0;\n}\n\n[mol_pop_align=\"left_center\"] {\n\ttransform: translate(-100%, -50%);\n\tleft: 0;\n\ttop: 50%;\n}\n\n[mol_pop_align=\"left_bottom\"] {\n\ttransform: translate(-100%);\n\tleft: 0;\n\ttop: 0;\n}\n\n[mol_pop_align=\"right_top\"] {\n\ttransform: translate(100%);\n\tright: 0;\n\tbottom: 0;\n}\n\n[mol_pop_align=\"right_center\"] {\n\ttransform: translate(100%, -50%);\n\tright: 0;\n\ttop: 50%;\n}\n\n[mol_pop_align=\"right_bottom\"] {\n\ttransform: translate(100%);\n\tright: 0;\n\ttop: 0;\n}\n\n[mol_pop_align=\"center\"] {\n\tleft: 50%;\n\ttop: 50%;\n\ttransform: translate(-50%, -50%);\n}\n\n[mol_pop_align=\"top_left\"] {\n\tright: 0;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"top_center\"] {\n\ttransform: translate(-50%);\n\tleft: 50%;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"top_right\"] {\n\tleft: 0;\n\tbottom: 100%;\n}\n\n[mol_pop_align=\"bottom_left\"] {\n\tright: 0;\n\ttop: 100%;\n}\n\n[mol_pop_align=\"bottom_center\"] {\n\ttransform: translate(-50%);\n\tleft: 50%;\n\ttop: 100%;\n}\n\n[mol_pop_align=\"bottom_right\"] {\n\tleft: 0;\n\ttop: 100%;\n}\n");
 })($ || ($ = {}));
 
 ;
@@ -6517,6 +6523,7 @@ var $;
                     return next;
                 let [min, max] = $mol_mem_cached(() => this.view_window()) ?? [0, 0];
                 const shift = this.view_window_shift();
+                this.view_window_shift(0);
                 min += shift;
                 max += shift;
                 let max2 = max = Math.min(max, kids.length);
@@ -9037,7 +9044,7 @@ var $;
 })($ || ($ = {}));
 
 ;
-	($.$gd_web_frame) = class $gd_web_frame extends ($.$mol_frame) {
+	($.$giper_web_frame) = class $giper_web_frame extends ($.$mol_frame) {
 		uri(){
 			return "https://web.giper.dev/#mol_lights={lights}/current={current}/query={query}";
 		}
@@ -9056,7 +9063,7 @@ var $;
 (function ($) {
     var $$;
     (function ($$) {
-        class $gd_web_frame extends $.$gd_web_frame {
+        class $giper_web_frame extends $.$giper_web_frame {
             uri() {
                 return super.uri()
                     .replace('{lights}', String(this.$.$mol_lights()))
@@ -9066,8 +9073,8 @@ var $;
         }
         __decorate([
             $mol_mem
-        ], $gd_web_frame.prototype, "uri", null);
-        $$.$gd_web_frame = $gd_web_frame;
+        ], $giper_web_frame.prototype, "uri", null);
+        $$.$giper_web_frame = $giper_web_frame;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));
 
@@ -9075,7 +9082,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    $mol_style_attach("gd/web/frame/frame.view.css", "/* @keyframes gd_web_frame_show {\n\tfrom {\n\t\topacity: 0;\n\t}\n}\n\n[gd_web_frame] {\n\tanimation: 5s -1s ease-in gd_web_frame_show;\n} */\n");
+    $mol_style_attach("giper/web/frame/frame.view.css", "/* @keyframes giper_web_frame_show {\n\tfrom {\n\t\topacity: 0;\n\t}\n}\n\n[giper_web_frame] {\n\tanimation: 5s -1s ease-in giper_web_frame_show;\n} */\n");
 })($ || ($ = {}));
 
 ;
@@ -9084,7 +9091,7 @@ var $;
 (function ($) {
     var $$;
     (function ($$) {
-        $mol_style_define($gd_web_frame, {
+        $mol_style_define($giper_web_frame, {
             flex: {
                 basis: '4rem',
                 shrink: 0,
@@ -12833,7 +12840,7 @@ var $;
 "use strict";
 
 ;
-	($.$gd_bot) = class $gd_bot extends ($.$mol_book2) {
+	($.$giper_bot) = class $giper_bot extends ($.$mol_book2) {
 		rules(){
 			return "Ты - Гипер Бот, универсальный интеллектуальный ассистент. Пользователь присылает тебе запрос в виде JSON строки. Твоя задача сформировать максимально точный и лаконичный ответ на запрос без лишней информации, о которой пользователь не просил. Ответ должен быть представлен в виде JSON объекта, где в поле \"response\" должен находиться собственно ответ в виде строки. В поле \"confidence\" отрази степень своей увернности в истинности ответа в диапазоне от 0 до 1. В поле \"digest\" должен находиться краткий пересказ всего вашего диалога от начала до конца. Говоря о пользователе в пересказе (и только в нём) используй эмодзи 🙂 вместо слова \"пользователь\", а вместо \"Гипер Бота\" - используй эмозди 🤖. В поле \"title\" должно быть придумано лаконичное название, ёмко характеризующее всё обсуждение целиком. Отвечай всегда на языке с кодом {lang}, если пользователь не попросил иное. Далее идёт пересказ прошлых ваших сообщений, не потеряй его в своём пересказе:";
 		}
@@ -12845,12 +12852,12 @@ var $;
 			return obj;
 		}
 		Space(){
-			const obj = new this.$.$gd_web_frame();
+			const obj = new this.$.$giper_web_frame();
 			return obj;
 		}
 		dialog_title(next){
 			if(next !== undefined) return next;
-			return (this.$.$mol_locale.text("$gd_bot_dialog_title"));
+			return (this.$.$mol_locale.text("$giper_bot_dialog_title"));
 		}
 		title(){
 			return (this.dialog_title());
@@ -12899,7 +12906,7 @@ var $;
 		}
 		Prompt_text(){
 			const obj = new this.$.$mol_textarea();
-			(obj.hint) = () => ((this.$.$mol_locale.text("$gd_bot_Prompt_text_hint")));
+			(obj.hint) = () => ((this.$.$mol_locale.text("$giper_bot_Prompt_text_hint")));
 			(obj.value) = (next) => ((this.prompt_text(next)));
 			(obj.submit) = (next) => ((this.prompt_submit(next)));
 			return obj;
@@ -12910,7 +12917,7 @@ var $;
 		}
 		Prompt_submit(){
 			const obj = new this.$.$mol_button_minor();
-			(obj.hint) = () => ((this.$.$mol_locale.text("$gd_bot_Prompt_submit_hint")));
+			(obj.hint) = () => ((this.$.$mol_locale.text("$giper_bot_Prompt_submit_hint")));
 			(obj.click) = (next) => ((this.prompt_submit(next)));
 			(obj.sub) = () => ([(this.Prompt_submit_icon())]);
 			return obj;
@@ -12936,7 +12943,7 @@ var $;
 		}
 		Reset(){
 			const obj = new this.$.$mol_button_minor();
-			(obj.hint) = () => ((this.$.$mol_locale.text("$gd_bot_Reset_hint")));
+			(obj.hint) = () => ((this.$.$mol_locale.text("$giper_bot_Reset_hint")));
 			(obj.click) = (next) => ((this.reset(next)));
 			(obj.sub) = () => ([(this.Reset_icon())]);
 			return obj;
@@ -12971,7 +12978,7 @@ var $;
 		}
 		Context(){
 			const obj = new this.$.$mol_page();
-			(obj.title) = () => ((this.$.$mol_locale.text("$gd_bot_Context_title")));
+			(obj.title) = () => ((this.$.$mol_locale.text("$giper_bot_Context_title")));
 			(obj.tools) = () => ([
 				(this.Reset()), 
 				(this.Sources()), 
@@ -12999,31 +13006,31 @@ var $;
 			return [(this.Context())];
 		}
 	};
-	($mol_mem(($.$gd_bot.prototype), "Theme"));
-	($mol_mem(($.$gd_bot.prototype), "Space"));
-	($mol_mem(($.$gd_bot.prototype), "dialog_title"));
-	($mol_mem(($.$gd_bot.prototype), "Status"));
-	($mol_mem_key(($.$gd_bot.prototype), "Message_text"));
-	($mol_mem_key(($.$gd_bot.prototype), "Message"));
-	($mol_mem(($.$gd_bot.prototype), "Messages"));
-	($mol_mem(($.$gd_bot.prototype), "Avatar"));
-	($mol_mem(($.$gd_bot.prototype), "prompt_text"));
-	($mol_mem(($.$gd_bot.prototype), "prompt_submit"));
-	($mol_mem(($.$gd_bot.prototype), "Prompt_text"));
-	($mol_mem(($.$gd_bot.prototype), "Prompt_submit_icon"));
-	($mol_mem(($.$gd_bot.prototype), "Prompt_submit"));
-	($mol_mem(($.$gd_bot.prototype), "Dialog"));
-	($mol_mem(($.$gd_bot.prototype), "reset"));
-	($mol_mem(($.$gd_bot.prototype), "Reset_icon"));
-	($mol_mem(($.$gd_bot.prototype), "Reset"));
-	($mol_mem(($.$gd_bot.prototype), "Sources"));
-	($mol_mem(($.$gd_bot.prototype), "Donate"));
-	($mol_mem(($.$gd_bot.prototype), "Support"));
-	($mol_mem(($.$gd_bot.prototype), "Lights"));
-	($mol_mem(($.$gd_bot.prototype), "digest"));
-	($mol_mem(($.$gd_bot.prototype), "Digest"));
-	($mol_mem(($.$gd_bot.prototype), "Context"));
-	($mol_mem(($.$gd_bot.prototype), "Model"));
+	($mol_mem(($.$giper_bot.prototype), "Theme"));
+	($mol_mem(($.$giper_bot.prototype), "Space"));
+	($mol_mem(($.$giper_bot.prototype), "dialog_title"));
+	($mol_mem(($.$giper_bot.prototype), "Status"));
+	($mol_mem_key(($.$giper_bot.prototype), "Message_text"));
+	($mol_mem_key(($.$giper_bot.prototype), "Message"));
+	($mol_mem(($.$giper_bot.prototype), "Messages"));
+	($mol_mem(($.$giper_bot.prototype), "Avatar"));
+	($mol_mem(($.$giper_bot.prototype), "prompt_text"));
+	($mol_mem(($.$giper_bot.prototype), "prompt_submit"));
+	($mol_mem(($.$giper_bot.prototype), "Prompt_text"));
+	($mol_mem(($.$giper_bot.prototype), "Prompt_submit_icon"));
+	($mol_mem(($.$giper_bot.prototype), "Prompt_submit"));
+	($mol_mem(($.$giper_bot.prototype), "Dialog"));
+	($mol_mem(($.$giper_bot.prototype), "reset"));
+	($mol_mem(($.$giper_bot.prototype), "Reset_icon"));
+	($mol_mem(($.$giper_bot.prototype), "Reset"));
+	($mol_mem(($.$giper_bot.prototype), "Sources"));
+	($mol_mem(($.$giper_bot.prototype), "Donate"));
+	($mol_mem(($.$giper_bot.prototype), "Support"));
+	($mol_mem(($.$giper_bot.prototype), "Lights"));
+	($mol_mem(($.$giper_bot.prototype), "digest"));
+	($mol_mem(($.$giper_bot.prototype), "Digest"));
+	($mol_mem(($.$giper_bot.prototype), "Context"));
+	($mol_mem(($.$giper_bot.prototype), "Model"));
 
 
 ;
@@ -13055,7 +13062,7 @@ var $;
 (function ($) {
     var $$;
     (function ($$) {
-        class $gd_bot extends $.$gd_bot {
+        class $giper_bot extends $.$giper_bot {
             dialog_title(next) {
                 return this.$.$mol_state_session.value('title', next) ?? super.dialog_title();
             }
@@ -13121,17 +13128,17 @@ var $;
         }
         __decorate([
             $mol_mem
-        ], $gd_bot.prototype, "history", null);
+        ], $giper_bot.prototype, "history", null);
         __decorate([
             $mol_mem_key
-        ], $gd_bot.prototype, "message_text", null);
+        ], $giper_bot.prototype, "message_text", null);
         __decorate([
             $mol_mem
-        ], $gd_bot.prototype, "rules", null);
+        ], $giper_bot.prototype, "rules", null);
         __decorate([
             $mol_mem
-        ], $gd_bot.prototype, "communication", null);
-        $$.$gd_bot = $gd_bot;
+        ], $giper_bot.prototype, "communication", null);
+        $$.$giper_bot = $giper_bot;
     })($$ = $.$$ || ($.$$ = {}));
 })($ || ($ = {}));
 
@@ -13142,13 +13149,13 @@ var $;
     var $$;
     (function ($$) {
         const { url, linear_gradient, hsla } = $mol_style_func;
-        $mol_style_define($gd_bot, {
+        $mol_style_define($giper_bot, {
             background: {
                 size: ['cover'],
                 position: 'center',
                 image: [
                     [linear_gradient($mol_theme.spirit)],
-                    [url('gd/bot/logo/back.jpg')],
+                    [url('giper/bot/logo/back.jpg')],
                 ]
             },
             Dialog: {
@@ -18717,7 +18724,7 @@ var $;
 			return obj;
 		}
 		Bot(){
-			const obj = new this.$.$gd_bot();
+			const obj = new this.$.$giper_bot();
 			(obj.Space) = () => (null);
 			(obj.Sources) = () => (null);
 			(obj.Donate) = () => (null);

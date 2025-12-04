@@ -29,6 +29,8 @@
     "$mol_dom_context",
     "$mol_dom",
     "$node",
+    "$node_internal_check",
+    "$node_internal",
     "$mol_exec",
     "$mol_run",
     "$mol_error_mix",
@@ -74,8 +76,8 @@
     "$mol_maybe",
     "$mol_term_color",
     "$mol_term",
-    "$mol_fail_catch",
     "$mol_fail_log",
+    "$mol_fail_catch",
     "$mol_try",
     "$mol_promise_blocker",
     "$mol_promise_promise",
@@ -118,7 +120,6 @@
     "$mol_charset_encoding",
     "$mol_charset_encode",
     "$mol_file_transaction",
-    "$node_modules",
     "$mol_gap",
     "$mol_jsx",
     "$mol_dom_render_children",
@@ -188,11 +189,11 @@
     "$bog_theme_picker",
     "$bog_theme_auto",
     "$bog_theme_picker_row",
-    "$gd_bot",
-    "$gd",
+    "$giper_bot",
+    "$giper",
     "$mol_theme_auto",
-    "$gd_web_frame",
-    "$gd_web",
+    "$giper_web_frame",
+    "$giper_web",
     "$mol_frame",
     "$mol_embed_native",
     "$mol_embed",
@@ -316,6 +317,7 @@
     "$mol_icon_newspaper"
   ],
   "dependencies": {
+    "internal": "*",
     "jsdom": "*"
   }
 }

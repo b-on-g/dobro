@@ -431,9 +431,9 @@ $mol_frame $mol_embed_native
 	clipboard_read true
 	clipboard_write true
 
-$gd_web_frame $mol_frame
+$giper_web_frame $mol_frame
 	uri \https://web.giper.dev/#mol_lights={lights}/current={current}/query={query}
-	- uri \http://localhost:9080/gd/web/bar/-/test.html#mol_lights={lights}/current={current}/query={query}
+	- uri \http://localhost:9080/giper/web/bar/-/test.html#mol_lights={lights}/current={current}/query={query}
 	query \
 
 $mol_status $mol_view
@@ -912,14 +912,14 @@ $mol_text_list_item $mol_paragraph
 		^
 		mol_text_list_item_index <= index 0
 
-$gd_bot $mol_book2
+$giper_bot $mol_book2
 	Model? $mol_github_model
 		params * temperature 0
 		rules <= context <= rules \Ты - Гипер Бот, универсальный интеллектуальный ассистент. Пользователь присылает тебе запрос в виде JSON строки. Твоя задача сформировать максимально точный и лаконичный ответ на запрос без лишней информации, о которой пользователь не просил. Ответ должен быть представлен в виде JSON объекта, где в поле "response" должен находиться собственно ответ в виде строки. В поле "confidence" отрази степень своей увернности в истинности ответа в диапазоне от 0 до 1. В поле "digest" должен находиться краткий пересказ всего вашего диалога от начала до конца. Говоря о пользователе в пересказе (и только в нём) используй эмодзи 🙂 вместо слова "пользователь", а вместо "Гипер Бота" - используй эмозди 🤖. В поле "title" должно быть придумано лаконичное название, ёмко характеризующее всё обсуждение целиком. Отвечай всегда на языке с кодом {lang}, если пользователь не попросил иное. Далее идёт пересказ прошлых ваших сообщений, не потеряй его в своём пересказе:
 	plugins /
 		<= Theme $mol_theme_auto
 	pages /
-		<= Space $gd_web_frame
+		<= Space $giper_web_frame
 		<= Dialog $mol_page
 			title_content /
 				\🤖 
@@ -1563,7 +1563,7 @@ $bog_dobro_app $mol_book2_catalog
 			theme_dark \$mol_theme_dark
 	spreads *
 		\	
-			<= Bot $gd_bot
+			<= Bot $giper_bot
 				Space null
 				Sources null
 				Donate null
