@@ -317,7 +317,6 @@
     "$mol_icon_newspaper"
   ],
   "dependencies": {
-    "internal": "*",
     "jsdom": "*"
   }
 }
