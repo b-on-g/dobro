@@ -125,6 +125,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * CSS Units
+     * @see https://mol.hyoo.ru/#!section=docs/=xwq9q5_f966fg
+     */
     class $mol_style_unit extends $mol_decor {
         literal;
         constructor(value, literal) {
@@ -171,6 +175,10 @@ var $;
 var $;
 (function ($) {
     const { per } = $mol_style_unit;
+    /**
+     * CSS Functions
+     * @see https://mol.hyoo.ru/#!section=docs/=xwq9q5_f966fg
+     */
     class $mol_style_func extends $mol_decor {
         name;
         constructor(name, value) {
@@ -265,6 +273,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Create record of CSS variables. */
     function $mol_style_prop(prefix, keys) {
         const record = keys.reduce((rec, key) => {
             rec[key] = $mol_style_func.vary(`--${prefix}_${key}`);
@@ -279,6 +288,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Theme css variables
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_textarea_demo
+     */
     $.$mol_theme = $mol_style_prop('mol_theme', [
         'back',
         'hover',
@@ -307,11 +320,18 @@ var $;
 
 ;
 "use strict";
+// namespace $ {
+// 	$mol_style_attach( '$mol_theme_lights', `:root { --mol_theme_back: oklch( ${ $$.$mol_lights() ? 92 : 20 }% .01 var(--mol_theme_hue) ) }` )
+// }
 
 ;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Gap in CSS
+     * @see https://page.hyoo.ru/#!=msdb74_bm7nsq
+     */
     $.$mol_gap = $mol_style_prop('mol_gap', [
         'page',
         'block',
@@ -443,6 +463,12 @@ var $;
         createDocumentFragment: () => $mol_dom_context.document.createDocumentFragment(),
     };
     $.$mol_jsx_frag = '';
+    /**
+     * JSX adapter that makes DOM tree.
+     * Generates global unique ids for every DOM-element by components tree with ids.
+     * Ensures all local ids are unique.
+     * Can reuse an existing nodes by GUIDs when used inside [`mol_jsx_attach`](https://github.com/hyoo-ru/mam_mol/tree/master/jsx/attach).
+     */
     function $mol_jsx(Elem, props, ...childNodes) {
         const id = props && props.id || '';
         const guid = id ? $.$mol_jsx_prefix ? $.$mol_jsx_prefix + '/' + id : id : $.$mol_jsx_prefix;
@@ -567,6 +593,11 @@ var $;
 var $;
 (function ($) {
     const instances = new WeakSet();
+    /**
+     * Proxy that delegates all to lazy returned target.
+     *
+     * 	$mol_delegate( Array.prototype , ()=> fetch_array() )
+     */
     function $mol_delegate(proto, target) {
         const proxy = new Proxy(proto, {
             get: (_, field) => {
@@ -660,7 +691,7 @@ var $;
 var $;
 (function ($) {
     function $mol_fail_hidden(error) {
-        throw error;
+        throw error; /// Use 'Never Pause Here' breakpoint in DevTools or simply blackbox this script
     }
     $.$mol_fail_hidden = $mol_fail_hidden;
 })($ || ($ = {}));
@@ -720,6 +751,9 @@ var $;
         [Symbol.dispose]() {
             this.destructor();
         }
+        //[ Symbol.toPrimitive ]( hint: string ) {
+        //	return hint === 'number' ? this.valueOf() : this.toString()
+        //}
         toString() {
             return this[Symbol.toStringTag] || this.constructor.name + '<>';
         }
@@ -751,6 +785,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Generates unique identifier. */
     function $mol_guid(length = 8, exists = () => false) {
         for (;;) {
             let id = Math.random().toString(36).substring(2, length + 2).toUpperCase();
@@ -766,11 +801,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Special status statuses. */
     let $mol_wire_cursor;
     (function ($mol_wire_cursor) {
+        /** Update required. */
         $mol_wire_cursor[$mol_wire_cursor["stale"] = -1] = "stale";
+        /** Some of (transitive) pub update required. */
         $mol_wire_cursor[$mol_wire_cursor["doubt"] = -2] = "doubt";
+        /** Actual state but may be dropped. */
         $mol_wire_cursor[$mol_wire_cursor["fresh"] = -3] = "fresh";
+        /** State will never be changed. */
         $mol_wire_cursor[$mol_wire_cursor["final"] = -4] = "final";
     })($mol_wire_cursor = $.$mol_wire_cursor || ($.$mol_wire_cursor = {}));
 })($ || ($ = {}));
@@ -779,6 +819,9 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Collects subscribers in compact array. 28B
+     */
     class $mol_wire_pub extends Object {
         constructor(id = `$mol_wire_pub:${$mol_guid()}`) {
             super();
@@ -786,10 +829,17 @@ var $;
         }
         [Symbol.toStringTag];
         data = [];
+        // Derived objects should be Arrays.
         static get [Symbol.species]() {
             return Array;
         }
-        sub_from = 0;
+        /**
+         * Index of first subscriber.
+         */
+        sub_from = 0; // 4B
+        /**
+         * All current subscribers.
+         */
         get sub_list() {
             const res = [];
             for (let i = this.sub_from; i < this.data.length; i += 2) {
@@ -797,14 +847,23 @@ var $;
             }
             return res;
         }
+        /**
+         * Has any subscribers or not.
+         */
         get sub_empty() {
             return this.sub_from === this.data.length;
         }
+        /**
+         * Subscribe subscriber to this publisher events and return position of subscriber that required to unsubscribe.
+         */
         sub_on(sub, pub_pos) {
             const pos = this.data.length;
             this.data.push(sub, pub_pos);
             return pos;
         }
+        /**
+         * Unsubscribe subscriber from this publisher events by subscriber position provided by `on(pub)`.
+         */
         sub_off(sub_pos) {
             if (!(sub_pos < this.data.length)) {
                 $mol_fail(new Error(`Wrong pos ${sub_pos}`));
@@ -817,21 +876,39 @@ var $;
             if (end === this.sub_from)
                 this.reap();
         }
+        /**
+         * Called when last sub was unsubscribed.
+         **/
         reap() { }
+        /**
+         * Autowire this publisher with current subscriber.
+         **/
         promote() {
             $mol_wire_auto()?.track_next(this);
         }
+        /**
+         * Enforce actualization. Should not throw errors.
+         */
         fresh() { }
+        /**
+         * Allow to put data to caches in the subtree.
+         */
         complete() { }
         get incompleted() {
             return false;
         }
+        /**
+         * Notify subscribers about self changes.
+         */
         emit(quant = $mol_wire_cursor.stale) {
             for (let i = this.sub_from; i < this.data.length; i += 2) {
                 ;
                 this.data[i].absorb(quant, this.data[i + 1]);
             }
         }
+        /**
+         * Moves peer from one position to another. Doesn't clear data at old position!
+         */
         peer_move(from_pos, to_pos) {
             const peer = this.data[from_pos];
             const self_pos = this.data[from_pos + 1];
@@ -839,6 +916,9 @@ var $;
             this.data[to_pos + 1] = self_pos;
             peer.peer_repos(self_pos, to_pos);
         }
+        /**
+         * Updates self position in the peer.
+         */
         peer_repos(peer_pos, self_pos) {
             this.data[peer_pos + 1] = self_pos;
         }
@@ -854,10 +934,16 @@ var $;
 var $;
 (function ($) {
     $.$mol_wire_auto_sub = null;
+    /**
+     * When fulfilled, all publishers are promoted to this subscriber on access to its.
+     */
     function $mol_wire_auto(next = $.$mol_wire_auto_sub) {
         return $.$mol_wire_auto_sub = next;
     }
     $.$mol_wire_auto = $mol_wire_auto;
+    /**
+     * Affection queue. Used to prevent accidental stack overflow on emit.
+     */
     $.$mol_wire_affected = [];
 })($ || ($ = {}));
 
@@ -865,6 +951,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    // https://docs.google.com/document/d/1FTascZXT9cxfetuPRT2eXPQKXui4nWFivUnS_335T3U/preview#
     $['devtoolsFormatters'] ||= [];
     function $mol_dev_format_register(config) {
         $['devtoolsFormatters'].push(config);
@@ -916,6 +1003,7 @@ var $;
                 return false;
             if (!val)
                 return false;
+            // if( Error.isError( val ) ) true
             if (val[$.$mol_dev_format_body])
                 return true;
             return false;
@@ -933,12 +1021,16 @@ var $;
                     return $.$mol_dev_format_accent($mol_dev_format_native(val), '💨', $mol_dev_format_native(error), '');
                 }
             }
+            // if( Error.isError( val ) ) {
+            // 	return $mol_dev_format_native( val )
+            // }
             return null;
         },
     });
     function $mol_dev_format_native(obj) {
         if (typeof obj === 'undefined')
             return $.$mol_dev_format_shade('undefined');
+        // if( ![ 'object', 'function', 'symbol' ].includes( typeof obj )  ) return obj
         return [
             'object',
             {
@@ -996,6 +1088,9 @@ var $;
         'margin-left': '13px'
     });
     class Stack extends Array {
+        // [ Symbol.toPrimitive ]() {
+        // 	return this.toString()
+        // }
         toString() {
             return this.join('\n');
         }
@@ -1018,6 +1113,7 @@ var $;
             this.method = call.getMethodName() ?? '';
             if (this.method === this.function)
                 this.method = '';
+            // const func = c.getFunction()
             this.pos = [call.getEnclosingLineNumber() ?? 0, call.getEnclosingColumnNumber() ?? 0];
             this.eval = call.getEvalOrigin() ?? '';
             this.source = call.getScriptNameOrSourceURL() ?? '';
@@ -1064,9 +1160,16 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Publisher that can auto collect other publishers. 32B
+     *
+     * 	P1 P2 P3 P4 S1 S2 S3
+     * 	^           ^
+     * 	pubs_from   subs_from
+     */
     class $mol_wire_pub_sub extends $mol_wire_pub {
-        pub_from = 0;
-        cursor = $mol_wire_cursor.stale;
+        pub_from = 0; // 4B
+        cursor = $mol_wire_cursor.stale; // 4B
         get temp() {
             return false;
         }
@@ -1184,10 +1287,27 @@ var $;
                 return;
             this.cursor = quant;
             this.emit($mol_wire_cursor.doubt);
+            // if( pos >= 0 && pos < this.sub_from - 2 ) {
+            // 	const pub = this.data[ pos ] as $mol_wire_pub
+            // 	if( pub instanceof $mol_wire_task ) return
+            // 	for(
+            // 		let cursor = this.pub_from;
+            // 		cursor < this.sub_from;
+            // 		cursor += 2
+            // 	) {
+            // 		const pub = this.data[ cursor ] as $mol_wire_pub
+            // 		if( pub instanceof $mol_wire_task ) {
+            // 			pub.destructor()
+            // 		}
+            // 	}
+            // }
         }
         [$mol_dev_format_head]() {
             return $mol_dev_format_native(this);
         }
+        /**
+         * Is subscribed to any publisher or not.
+         */
         get pub_empty() {
             return this.sub_from === this.pub_from;
         }
@@ -1243,6 +1363,13 @@ var $;
 var $;
 (function ($) {
     const wrappers = new WeakMap();
+    /**
+     * Suspendable task with support both sync/async api.
+     *
+     * 	A1 A2 A3 A4 P1 P2 P3 P4 S1 S2 S3
+     * 	^           ^           ^
+     * 	args_from   pubs_from   subs_from
+     **/
     class $mol_wire_fiber extends $mol_wire_pub_sub {
         task;
         host;
@@ -1263,6 +1390,7 @@ var $;
             });
         }
         static sync() {
+            // Sync whole fiber graph
             while (this.planning.size) {
                 for (const fiber of this.planning) {
                     this.planning.delete(fiber);
@@ -1273,6 +1401,7 @@ var $;
                     fiber.fresh();
                 }
             }
+            // Collect garbage
             while (this.reaping.size) {
                 const fibers = this.reaping;
                 this.reaping = new Set;
@@ -1424,6 +1553,10 @@ var $;
             this.cursor = $mol_wire_cursor.stale;
             this.fresh();
         }
+        /**
+         * Synchronous execution. Throws Promise when waits async task (SuspenseAPI provider).
+         * Should be called inside SuspenseAPI consumer (ie fiber).
+         */
         sync() {
             if (!$mol_wire_fiber.warm) {
                 return this.result();
@@ -1438,6 +1571,10 @@ var $;
             }
             return this.cache;
         }
+        /**
+         * Asynchronous execution.
+         * It's SuspenseAPI consumer. So SuspenseAPI providers can be called inside.
+         */
         async async_raw() {
             while (true) {
                 this.fresh();
@@ -1450,6 +1587,7 @@ var $;
                 if (!$mol_promise_like(this.cache))
                     return this.cache;
                 if (this.cursor === $mol_wire_cursor.final) {
+                    // never ends on destructed fiber
                     await new Promise(() => { });
                 }
             }
@@ -1497,6 +1635,7 @@ var $;
 var $;
 (function ($) {
     const TypedArray = Object.getPrototypeOf(Uint8Array);
+    /** Returns string key for any value. */
     function $mol_key(value) {
         primitives: {
             if (typeof value === 'bigint')
@@ -1504,9 +1643,9 @@ var $;
             if (typeof value === 'symbol')
                 return `Symbol(${value.description})`;
             if (!value)
-                return JSON.stringify(value);
+                return JSON.stringify(value); // 0, null, ""
             if (typeof value !== 'object' && typeof value !== 'function')
-                return JSON.stringify(value);
+                return JSON.stringify(value); // boolean, number, string
         }
         caching: {
             let key = $mol_key_store.get(value);
@@ -1590,6 +1729,10 @@ var $;
 var $;
 (function ($) {
     $.$mol_compare_deep_cache = new WeakMap();
+    /**
+     * Deeply compares two values. Returns true if equal.
+     * Define `Symbol.toPrimitive` to customize.
+     */
     function $mol_compare_deep(left, right) {
         if (Object.is(left, right))
             return true;
@@ -1729,6 +1872,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Log begin of collapsed group only when some logged inside, returns func to close group */
     function $mol_log3_area_lazy(event) {
         const self = this.$;
         const stack = self.$mol_log3_stack;
@@ -1785,6 +1929,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** One-shot fiber */
     class $mol_wire_task extends $mol_wire_fiber {
         static getter(task) {
             return function $mol_wire_task_get(host, args) {
@@ -1810,6 +1955,7 @@ var $;
                 }
                 const key = (host?.[Symbol.toStringTag] ?? host) + ('.' + task.name + '<#>');
                 const next = new $mol_wire_task(key, task, host, args);
+                // Disabled because non-idempotency is required for try-catch
                 if (existen?.temp) {
                     $$.$mol_log3_warn({
                         place: '$mol_wire_task',
@@ -1842,7 +1988,7 @@ var $;
                     try {
                         next[Symbol.toStringTag] = this[Symbol.toStringTag];
                     }
-                    catch {
+                    catch { // Promises throw in strict mode
                         Object.defineProperty(next, Symbol.toStringTag, { value: this[Symbol.toStringTag] });
                     }
                 }
@@ -1867,6 +2013,9 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Decorates method to fiber to ensure it is executed only once inside other fiber.
+     */
     function $mol_wire_method(host, field, descr) {
         if (!descr)
             descr = Reflect.getOwnPropertyDescriptor(host, field);
@@ -1936,6 +2085,7 @@ var $;
     let error;
     let result;
     let handler;
+    /// Debugger will stop at exceptions but exception will be returned normally
     function $mol_try_web(handler2) {
         handler = handler2;
         error = undefined;
@@ -1976,6 +2126,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Long-living fiber. */
     class $mol_wire_atom extends $mol_wire_fiber {
         static solo(host, task) {
             const field = task.name + '()';
@@ -2026,7 +2177,11 @@ var $;
             }
             $mol_wire_atom.watching.add(this);
         }
+        /**
+         * Update atom value through another temp fiber.
+         */
         resync(args) {
+            // enforce pulling tasks abort
             for (let cursor = this.pub_from; cursor < this.sub_from; cursor += 2) {
                 const pub = this.data[cursor];
                 if (pub && pub instanceof $mol_wire_task) {
@@ -2087,7 +2242,7 @@ var $;
                     try {
                         next[Symbol.toStringTag] = this[Symbol.toStringTag];
                     }
-                    catch {
+                    catch { // Promises throw in strict mode
                         Object.defineProperty(next, Symbol.toStringTag, { value: this[Symbol.toStringTag] });
                     }
                 }
@@ -2115,6 +2270,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Decorates solo object channel to [mol_wire_atom](../atom/atom.ts). */
     function $mol_wire_solo(host, field, descr) {
         if (!descr)
             descr = Reflect.getOwnPropertyDescriptor(host, field);
@@ -2153,6 +2309,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Reactive memoizing multiplexed property decorator. */
     function $mol_wire_plex(host, field, descr) {
         if (!descr)
             descr = Reflect.getOwnPropertyDescriptor(host, field);
@@ -2191,7 +2348,25 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Reactive memoizing solo property decorator from [mol_wire](../wire/README.md)
+     * @example
+     * '@' $mol_mem
+     * name(next?: string) {
+     * 	return next ?? 'default'
+     * }
+     * @see https://mol.hyoo.ru/#!section=docs/=qxmh6t_sinbmb
+     */
     $.$mol_mem = $mol_wire_solo;
+    /**
+     * Reactive memoizing multiplexed property decorator [mol_wire](../wire/README.md)
+     * @example
+     * '@' $mol_mem_key
+     * name(id: number, next?: string) {
+     *  return next ?? 'default'
+     * }
+     * @see https://mol.hyoo.ru/#!section=docs/=qxmh6t_sinbmb
+     */
     $.$mol_mem_key = $mol_wire_plex;
 })($ || ($ = {}));
 
@@ -2280,6 +2455,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+    * Key names code for hotkey
+    * @see [mol_hotkey](../../hotkey/hotkey.view.ts)
+    */
     let $mol_keyboard_code;
     (function ($mol_keyboard_code) {
         $mol_keyboard_code[$mol_keyboard_code["backspace"] = 8] = "backspace";
@@ -2528,6 +2707,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Run code without state changes */
     function $mol_wire_probe(task, def) {
         const warm = $mol_wire_fiber.warm;
         try {
@@ -2548,6 +2728,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Real-time refresh current atom.
+     * Don't use if possible. May reduce performance.
+     */
     function $mol_wire_watch() {
         const atom = $mol_wire_auto();
         if (atom instanceof $mol_wire_atom) {
@@ -2564,6 +2748,11 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Returns closure that returns constant value.
+     * @example
+     * const rnd = $mol_const( Math.random() )
+     */
     function $mol_const(value) {
         const getter = (() => value);
         getter['()'] = value;
@@ -2578,6 +2767,9 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Disable reaping of current subscriber
+     */
     function $mol_wire_solid() {
         let current = $mol_wire_auto();
         if (current.temp)
@@ -2681,6 +2873,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Convert a pseudo-synchronous (Suspense API) API to an explicit asynchronous one (for integrating with external systems). */
     function $mol_wire_async(obj) {
         let fiber;
         const temp = $mol_wire_task.getter(obj);
@@ -2740,6 +2933,7 @@ var $;
 
 ;
 "use strict";
+/** @jsx $mol_jsx */
 var $;
 (function ($) {
     function $mol_view_visible_width() {
@@ -2754,6 +2948,11 @@ var $;
         return suffix;
     }
     $.$mol_view_state_key = $mol_view_state_key;
+    /**
+     * The base class for all visual components. It provides the infrastructure for reactive lazy rendering, handling exceptions.
+     * @see https://mol.hyoo.ru/#!section=docs/=vv2nig_s5zr0f
+     */
+    /// Reactive statefull lazy ViewModel
     class $mol_view extends $mol_object {
         static Root(id) {
             return new this;
@@ -2818,16 +3017,22 @@ var $;
         state_key(suffix = '') {
             return this.$.$mol_view_state_key(suffix);
         }
+        /// Name of element that created when element not found in DOM
         dom_name() {
             return $mol_dom_qname(this.constructor.toString()) || 'div';
         }
+        /// NameSpace of element that created when element not found in DOM
         dom_name_space() { return 'http://www.w3.org/1999/xhtml'; }
+        /// Raw child views
         sub() {
             return [];
         }
+        /// Visible sub views with defined ambient context
+        /// Render all by default
         sub_visible() {
             return this.sub();
         }
+        /// Minimal width that used for lazy rendering
         minimal_width() {
             let min = 0;
             try {
@@ -2849,6 +3054,7 @@ var $;
         maximal_width() {
             return this.minimal_width();
         }
+        /// Minimal height that used for lazy rendering
         minimal_height() {
             let min = 0;
             try {
@@ -2868,11 +3074,11 @@ var $;
         view_rect() {
             if ($mol_wire_probe(() => this.view_rect()) === undefined) {
                 $mol_wire_watch();
-                return null;
+                return null; // don't touch DOM to prevent instant reflow
             }
             else {
                 const { width, height, left, right, top, bottom } = this.dom_node().getBoundingClientRect();
-                return { width, height, left, right, top, bottom };
+                return { width, height, left, right, top, bottom }; // pick to optimize compare
             }
         }
         dom_id() {
@@ -3062,6 +3268,7 @@ var $;
         [$mol_dev_format_head]() {
             return $mol_dev_format_span({}, $mol_dev_format_native(this));
         }
+        /** Deep search view by predicate. */
         *view_find(check, path = []) {
             if (path.length === 0 && check(this))
                 return yield [this];
@@ -3090,6 +3297,7 @@ var $;
                 $mol_fail_log(error);
             }
         }
+        /** Renders path of views to DOM. */
         force_render(path) {
             const kids = this.sub();
             const index = kids.findIndex(item => {
@@ -3104,6 +3312,7 @@ var $;
                 kids[index].force_render(path);
             }
         }
+        /** Renders view to DOM and scroll to it. */
         ensure_visible(view, align = "start") {
             const path = this.view_find(v => v === view).next().value;
             this.force_render(new Set(path));
@@ -3118,6 +3327,9 @@ var $;
             const win = this.$.$mol_dom_context;
             if (win.parent !== win.self && !win.document.hasFocus())
                 return;
+            // new this.$.$mol_after_frame( ()=> {
+            // 	this.dom_node().scrollIntoView({ block: 'start', inline: 'nearest' })
+            // } )
             new this.$.$mol_after_timeout(0, () => {
                 this.focused(true);
             });
@@ -3205,6 +3417,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Plugin is component without its own DOM element, but instead uses the owner DOM element */
     class $mol_plugin extends $mol_view {
         dom_node_external(next) {
             return next ?? $mol_owning_get(this).host.dom_node();
@@ -3423,6 +3636,11 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * CSS in TS.
+     * Statically typed CSS style sheets. Following samples show which CSS code are generated from TS code.
+     * @see https://mol.hyoo.ru/#!section=docs/=xwq9q5_f966fg
+     */
     function $mol_style_define(Component, config) {
         return $mol_style_attach(Component.name, $mol_style_sheet(Component, config));
     }
@@ -3432,12 +3650,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Scrolling pane.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_scroll_demo
+         */
         class $mol_scroll extends $.$mol_scroll {
             scroll_top(next, cache) {
                 const el = this.dom_node();
@@ -3487,6 +3710,7 @@ var $;
                 direction: 'column',
                 grow: 1,
                 shrink: 1,
+                // basis: 0,
             },
             outline: 'none',
             align: {
@@ -3504,6 +3728,7 @@ var $;
             contain: 'content',
             '>': {
                 $mol_view: {
+                    // transform: 'translateZ(0)', // enforce gpu scroll in all agents
                     gridArea: '1/1',
                 },
             },
@@ -3573,6 +3798,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Z-index values for layers
+     * https://page.hyoo.ru/#!=xthcpx_wqmiba
+     */
     $.$mol_layer = $mol_style_prop('mol_layer', [
         'hover',
         'focus',
@@ -3595,12 +3824,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Root component for adaptivity to various screen sizes. Implements booklet UX.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_book2_demo
+         */
         class $mol_book2 extends $.$mol_book2 {
             pages_deep() {
                 let result = [];
@@ -3643,6 +3877,7 @@ var $;
                             left: p.offsetLeft + p.offsetWidth - b.offsetWidth,
                             behavior: 'smooth',
                         });
+                        // new this.$.$mol_after_timeout( 1000, ()=> n.bring() )
                     });
                     break;
                 }
@@ -3686,12 +3921,16 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Mixin view logic to DOM node of another component.
+         */
         class $mol_ghost extends $.$mol_ghost {
             dom_node_external(next) {
                 return this.Sub().dom_node(next);
@@ -3761,12 +4000,16 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Marker on top of another component with tracking of its position.
+         */
         class $mol_follower extends $.$mol_follower {
             pos() {
                 const self_rect = this.view_rect();
@@ -3902,12 +4145,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * `Bubble` that can be shown anchored to `Anchor` element.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_pop_demo
+         */
         class $mol_pop extends $.$mol_pop {
             showed(next = false) {
                 this.focused();
@@ -4052,12 +4300,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Plugin which adds handlers for keyboard keys.
+         * @see [mol_keyboard_code](../keyboard/code/code.ts)
+         */
         class $mol_hotkey extends $.$mol_hotkey {
             key() {
                 return super.key();
@@ -4153,12 +4406,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Plugin which can navigate in list of items
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_nav_demo
+         */
         class $mol_nav extends $.$mol_nav {
             event_key(event) {
                 if (!event)
@@ -4292,6 +4550,10 @@ var $;
         props[field] = get_val;
         return get_val;
     }
+    /**
+     * Convert asynchronous (promise-based) API to synchronous by wrapping function and method calls in a fiber.
+     * @see https://mol.hyoo.ru/#!section=docs/=1fcpsq_1wh0h2
+     */
     function $mol_wire_sync(obj) {
         return new Proxy(obj, {
             get(obj, field) {
@@ -4457,6 +4719,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Decorates method to fiber to ensure it is executed only once inside other fiber from [mol_wire](../wire/README.md)
+     * @see https://mol.hyoo.ru/#!section=docs/=1fcpsq_1wh0h2
+     */
     $.$mol_action = $mol_wire_method;
 })($ || ($ = {}));
 
@@ -4533,7 +4799,8 @@ var $;
 "use strict";
 var $;
 (function ($) {
-    let buf = new Uint8Array(2 ** 12);
+    let buf = new Uint8Array(2 ** 12); // 4KB Mem Page
+    /** Temporary buffer. Recursive usage isn't supported. */
     function $mol_charset_buffer(size) {
         if (buf.byteLength < size)
             buf = new Uint8Array(size);
@@ -4555,19 +4822,19 @@ var $;
         let pos = from;
         for (let i = 0; i < str.length; i++) {
             let code = str.charCodeAt(i);
-            if (code < 0x80) {
+            if (code < 0x80) { // ASCII - 1 octet
                 buf[pos++] = code;
             }
-            else if (code < 0x800) {
+            else if (code < 0x800) { // 2 octet
                 buf[pos++] = 0xc0 | (code >> 6);
                 buf[pos++] = 0x80 | (code & 0x3f);
             }
-            else if (code < 0xd800 || code >= 0xe000) {
+            else if (code < 0xd800 || code >= 0xe000) { // 3 octet
                 buf[pos++] = 0xe0 | (code >> 12);
                 buf[pos++] = 0x80 | ((code >> 6) & 0x3f);
                 buf[pos++] = 0x80 | (code & 0x3f);
             }
-            else {
+            else { // surrogate pair
                 const point = ((code - 0xd800) << 10) + str.charCodeAt(++i) + 0x2400;
                 buf[pos++] = 0xf0 | (point >> 18);
                 buf[pos++] = 0x80 | ((point >> 12) & 0x3f);
@@ -4649,12 +4916,24 @@ var $;
         root() {
             const path = this.path();
             const base = this.constructor.base;
+            // Если путь выше или равен base или если parent такойже как и this - считаем это корнем
             return base.startsWith(path) || this == this.parent();
         }
         stat(next, virt) {
             const path = this.path();
             const parent = this.parent();
+            // Отслеживать проверку наличия родительской папки не стоит до корня диска
+            // Лучше ограничить mam-ом
             if (!this.root()) {
+                /*
+                Если parent папка удалилась, надо ресетнуть все объекты в ней на любой глубине.
+                Например, rm -rf с последующим git pull: parent папка может удалиться, потом создасться,
+                а текущая папка успеет только удалиться до момента выполнения stat.
+                Поэтому parent.exists() не запустит перевычисления, нужна именно parent.version()
+
+                Однако, parent.version() меняется не только при удалении, будет ложное срабатывание
+                С этим придется мириться, красивого решения пока нет.
+                */
                 parent.version();
             }
             parent.watcher();
@@ -4668,9 +4947,19 @@ var $;
             if (/([\/\\]\.|___$)/.test(path))
                 return;
             const file = this.relative(path.at(-1) === '/' ? path.slice(0, -1) : path);
+            // console.log(type, path)
+            // add (change): добавился файл - у parent надо обновить список sub, если он был заюзан
+            // change, unlink (rename): обновился или удалился файл - ресетим
+            // addDir (change), добавилась папка, у parent обновляем список директорий в sub
+            // дочерние ресетим
+            // unlinkDir (rename), удалилась папка, ресетим ее
+            // stat у всех дочерних обновится сам, т.к. связан с parent.version()
             this.changed.add(file);
             if (!this.watching)
                 return;
+            // throttle, пока события поступают не сбрасываем.
+            // аналог awaitWriteFinish из chokidar
+            // интервалы между change-сообщениями модифицируемого файла должны быть меньше watch_debounce
             this.frame?.destructor();
             this.frame = new this.$.$mol_after_timeout(this.watch_debounce(), () => {
                 if (!this.watching)
@@ -4679,8 +4968,16 @@ var $;
                 $mol_wire_async(this).flush();
             });
         }
+        /**
+         * Должно быть больше, чем время между событиями от вотчера при записи внешним процессом.
+         * Иначе запуск ресетов паралельно с изменением может привести к неконсистентности.
+         */
         static watch_debounce() { return 500; }
         static flush() {
+            // Пока flush работает, вотчер сюда не заходит, но может добавлять новые изменения
+            // на каждом перезапуске они применятся
+            // Пока run выполняется, изменения накапливаются, в конце run вызывается flush
+            // Пока применяются изменения, run должен ожидать конца flush
             for (const file of this.changed) {
                 const parent = file.parent();
                 try {
@@ -4695,16 +4992,32 @@ var $;
             }
             this.changed.clear();
             this.watching = true;
+            // this.watch_wd?.destructor()
+            // this.watch_wd = null
         }
         static watching = true;
         static lock = new $mol_lock;
         static watch_off(path) {
             this.watching = false;
+            // run должен ожидать конца flush
             this.flush();
             this.watching = false;
+            /*
+            watch запаздывает и событие может прилететь через 3 сек после окончания сайд эффекта
+            поэтому добавляем папку, которую меняет side_effect
+            Когда дойдет до выполнения flush, он ресетнет ее
+            
+            Иначе будут лишние срабатывания
+            Например, удалили hyoo/board, watch ресетит и exists начинает отдавать false, срабатывает git clone
+            Сразу после него событие addDir еще не успело прийти,
+            на следующем перезапуске вызывается git pull, т.к.
+            с точки зрения реактивной системы hyoo/board еще не существует.
+            */
             this.changed.add(this.absolute(path));
         }
+        // protected static watch_wd = null as null | $mol_after_timeout
         static unwatched(side_effect, affected_dir) {
+            // ждем, пока выполнится предыдущий unwatched
             const unlock = this.lock.grab();
             this.watch_off(affected_dir);
             try {
@@ -4727,6 +5040,7 @@ var $;
         modified() { return this.stat()?.mtime ?? null; }
         version() {
             const next = this.stat()?.mtime.getTime().toString(36).toUpperCase() ?? '';
+            // console.log('version', next, this.path())
             return next;
         }
         info(path) { return null; }
@@ -4744,15 +5058,19 @@ var $;
         writable(opts) {
             return new WritableStream;
         }
+        // open( ... modes: readonly $mol_file_mode[] ) { return 0 }
         buffer(next) {
+            // Если версия пустая - возвращаем пустой буфер
             let readed = new Uint8Array();
             if (next === undefined) {
+                // Если меняется версия файла, буфер надо перечитать
                 if (this.version())
                     readed = this.read();
             }
             const prev = $mol_mem_cached(() => this.buffer());
             const changed = prev === undefined || !$mol_compare_array(prev, next ?? readed);
             if (prev !== undefined && changed) {
+                // Логируем, если повторно читаем/пишем и буфер поменялся
                 this.$.$mol_log3_rise({
                     place: `$mol_file_node.buffer()`,
                     message: 'Changed',
@@ -4761,6 +5079,11 @@ var $;
             }
             if (next === undefined)
                 return changed ? readed : prev;
+            // Если буфер при записи не поменялся и файл не удаляли перед этим - не записываем новую версию.
+            // Если записывать, это приведет к смене mtime и вотчер снова триггернется, даже если содержимое файла не поменялось.
+            // В этом алгоритме есть изъян.
+            // Если файл записали, потом отключили вотчер, кто-то из вне его поменял, потом включили вотчер, снова записали тот же буфер,
+            // то буфер не запишется на диск, т.к. кэш не консистентен с диском.
             if (!changed && this.exists())
                 return prev;
             this.parent().exists(true);
@@ -4796,13 +5119,21 @@ var $;
             }
             return null;
         }
+        // static watch_root = ''
+        // static watcher_warned = false
         watcher() {
+            // const constructor = this.constructor as typeof $mol_file_base
+            // if (! constructor.watcher_warned) {
+            // 	console.warn(`${constructor}.watcher() not implemented`)
+            // 	constructor.watcher_warned = true
+            // }
             return {
                 destructor() { }
             };
         }
         exists(next) {
             const exists = Boolean(this.stat());
+            // console.log('exists current', exists, 'next', next, this.path())
             if (next === undefined)
                 return exists;
             if (next === exists)
@@ -4828,6 +5159,10 @@ var $;
             return match ? match[1].substring(1) : '';
         }
         text(next, virt) {
+            // Если записываем text, и вотчер ресетнул записанный файл,
+            // то надо снова его обновить, вызвать логику, которая делала пуш в text.
+            // Например файл удалили, потом снова создали, версия поменялась - перезаписываем
+            // Если использовать version, то вновь созданный файл, через вотчер запустит свое пересоздание
             if (next !== undefined)
                 this.exists();
             return this.text_int(next, virt);
@@ -4852,6 +5187,7 @@ var $;
             if (this.type() !== 'dir')
                 return [];
             this.version();
+            // Если дочерний file удалился, список надо обновить
             return this.kids().filter(file => file.exists());
         }
         resolve(path) {
@@ -5061,6 +5397,7 @@ var $;
                     ])
                 ].map(frame_normalize).join('\n')
             });
+            // в nodejs, что б не дублировалось cause в консоли
             Object.defineProperty(this, 'cause', {
                 get: () => cause
             });
@@ -5213,6 +5550,7 @@ var $;
             });
             return Object.assign(promise, {
                 destructor: () => {
+                    // Abort of done request breaks response parsing
                     if (!done && !controller.signal.aborted)
                         controller.abort();
                 },
@@ -5290,10 +5628,12 @@ var $;
             let res = this.path() + '/' + path;
             while (true) {
                 let prev = res;
+                // foo/../ -> /
                 res = res.replace(/\/[^\/.]+\/\.\.\//, '/');
                 if (prev === res)
                     break;
             }
+            // http://localhost/.. -> http://localhost
             res = res.replace(/\/\.\.\/?$/, '');
             if (res === this.path())
                 return this;
@@ -5409,8 +5749,13 @@ var $;
 (function ($) {
     class $mol_file_web extends $mol_file_webdav {
         static base = new URL('.', $mol_dom_context.document?.currentScript?.['src'] ?? globalThis.location.href).toString();
+        // Вотчер выключен, версия всегда будет одна
+        // Если пустая строка - будет считаться, что файла нет
         version() { return '1'; }
+        // Ворнинги подавляем, иначе в каждом приложении, загружающим локали, будет ворнинг
+        // override watcher() { return { destructor() {} }}
         info() {
+            // Директории не поддерживаются
             try {
                 const response = this.fetch({ method: 'HEAD' });
                 const headers = response.headers();
@@ -5444,6 +5789,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Localisation in $mol framework
+     * @see https://mol.hyoo.ru/#!section=docs/=s5aqnb_odub8l
+     */
     class $mol_locale extends $mol_object {
         static lang_default() {
             return 'en';
@@ -5630,12 +5979,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * An input field for entering single line text.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_string_demo
+         */
         class $mol_string extends $.$mol_string {
             event_change(next) {
                 if (!next)
@@ -5760,6 +6114,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** State of time moment */
     class $mol_state_time extends $mol_object {
         static task(precision, reset) {
             if (precision) {
@@ -5786,12 +6141,14 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /** Base SVG component to display SVG images or icons. */
         class $mol_svg extends $.$mol_svg {
             computed_style() {
                 const win = this.$.$mol_dom_context;
@@ -5851,6 +6208,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_svg_path) = class $mol_svg_path extends ($.$mol_svg) {
 		geometry(){
@@ -5867,6 +6225,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_icon) = class $mol_icon extends ($.$mol_svg_root) {
@@ -5904,6 +6263,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_close) = class $mol_icon_close extends ($.$mol_icon) {
 		path(){
@@ -5914,6 +6274,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_speck) = class $mol_speck extends ($.$mol_view) {
@@ -5938,6 +6299,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_button) = class $mol_button extends ($.$mol_view) {
@@ -6027,12 +6389,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Simple button.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_button_demo
+         */
         class $mol_button extends $.$mol_button {
             disabled() {
                 return !this.enabled();
@@ -6048,6 +6415,7 @@ var $;
                     this.status([null]);
                 }
                 catch (error) {
+                    // Calling actions from catch section, if throwing promise breaks idempotency
                     Promise.resolve().then(() => this.status([error]));
                     $mol_fail_hidden(error);
                 }
@@ -6117,6 +6485,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_button_minor) = class $mol_button_minor extends ($.$mol_button_typed) {};
 
@@ -6130,6 +6499,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_list) = class $mol_list extends ($.$mol_view) {
@@ -6203,12 +6573,18 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * The list of rows with lazy/virtual rendering support based on `minimal_height` of rows.
+         * `mol_list` should contain only components that inherits `mol_view`. You should not place raw strings or numbers in list.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_list_demo
+         */
         class $mol_list extends $.$mol_list {
             sub() {
                 const rows = this.rows();
@@ -6250,9 +6626,11 @@ var $;
                 const gap_after = $mol_mem_cached(() => this.gap_after()) ?? 0;
                 let top = Math.ceil(rect?.top ?? 0) + gap_before;
                 let bottom = Math.ceil(rect?.bottom ?? 0) - gap_after;
+                // change nothing when already covers all limits
                 if (top <= limit_top && bottom >= limit_bottom) {
                     return [min2, max2];
                 }
+                // jumps when fully over limits
                 if (anchoring && ((bottom < limit_top) || (top > limit_bottom))) {
                     min = 0;
                     top = Math.ceil(rect?.top ?? 0);
@@ -6269,18 +6647,22 @@ var $;
                 }
                 let top2 = top;
                 let bottom2 = bottom;
+                // force recalc min when overlapse top limit
                 if (anchoring && (top < limit_top) && (bottom < limit_bottom) && (max < kids.length)) {
                     min2 = max;
                     top2 = bottom;
                 }
+                // force recalc max when overlapse bottom limit
                 if ((bottom > limit_bottom) && (top > limit_top) && (min > 0)) {
                     max2 = min;
                     bottom2 = top;
                 }
+                // extend min to cover top limit
                 while (anchoring && ((top2 > limit_top) && (min2 > 0))) {
                     --min2;
                     top2 -= this.item_height_min(min2);
                 }
+                // extend max to cover bottom limit
                 while (bottom2 < limit_bottom && max2 < kids.length) {
                     bottom2 += this.item_height_min(max2);
                     ++max2;
@@ -6408,6 +6790,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -6512,8 +6895,10 @@ var $;
 var $;
 (function ($) {
     let x = /x/[Symbol.matchAll];
+    /** Type safe reguar expression builder */
     class $mol_regexp extends RegExp {
         groups;
+        /** Prefer to use $mol_regexp.from */
         constructor(source, flags = 'gsu', groups = []) {
             super(source, flags);
             this.groups = groups;
@@ -6533,12 +6918,14 @@ var $;
                 this.lastIndex = index;
             }
         }
+        /** Parses input and returns found capture groups or null */
         [Symbol.match](str) {
             const res = [...this[Symbol.matchAll](str)].filter(r => r.groups).map(r => r[0]);
             if (!res.length)
                 return null;
             return res;
         }
+        /** Splits string by regexp edges */
         [Symbol.split](str) {
             const res = [];
             let token_last = null;
@@ -6593,12 +6980,14 @@ var $;
         get native() {
             return new RegExp(this.source, this.flags);
         }
+        /** Makes regexp that greedy repeats this pattern with delimiter */
         static separated(chunk, sep) {
             return $mol_regexp.from([
                 $mol_regexp.repeat_greedy([[chunk], sep], 0),
                 chunk,
             ]);
         }
+        /** Makes regexp that non-greedy repeats this pattern from min to max count */
         static repeat(source, min = 0, max = Number.POSITIVE_INFINITY) {
             const regexp = $mol_regexp.from(source);
             const upper = Number.isFinite(max) ? max : '';
@@ -6614,6 +7003,7 @@ var $;
             };
             return regexp2;
         }
+        /** Makes regexp that greedy repeats this pattern from min to max count */
         static repeat_greedy(source, min = 0, max = Number.POSITIVE_INFINITY) {
             const regexp = $mol_regexp.from(source);
             const upper = Number.isFinite(max) ? max : '';
@@ -6629,6 +7019,7 @@ var $;
             };
             return regexp2;
         }
+        /** Makes regexp that match any of options */
         static vary(sources, flags = 'gsu') {
             const groups = [];
             const chunks = sources.map(source => {
@@ -6638,17 +7029,21 @@ var $;
             });
             return new $mol_regexp(`(?:${chunks.join('|')})`, flags, groups);
         }
+        /** Makes regexp that allow absent of this pattern */
         static optional(source) {
             return $mol_regexp.repeat_greedy(source, 0, 1);
         }
+        /** Makes regexp that look ahead for pattern */
         static force_after(source) {
             const regexp = $mol_regexp.from(source);
             return new $mol_regexp(`(?=${regexp.source})`, regexp.flags, regexp.groups);
         }
+        /** Makes regexp that look ahead for pattern */
         static forbid_after(source) {
             const regexp = $mol_regexp.from(source);
             return new $mol_regexp(`(?!${regexp.source})`, regexp.flags, regexp.groups);
         }
+        /** Converts some js values to regexp */
         static from(source, { ignoreCase, multiline } = {
             ignoreCase: false,
             multiline: false,
@@ -6749,9 +7144,11 @@ var $;
                 return regexp;
             }
         }
+        /** Makes regexp which includes only unicode category */
         static unicode_only(...category) {
             return new $mol_regexp(`\\p{${category.join('=')}}`);
         }
+        /** Makes regexp which excludes unicode category */
         static unicode_except(...category) {
             return new $mol_regexp(`\\P{${category.join('=')}}`);
         }
@@ -6792,12 +7189,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Output text with dimmed mismatched substrings.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_dimmer_demo
+         */
         class $mol_dimmer extends $.$mol_dimmer {
             parts() {
                 const needle = this.needle();
@@ -7000,12 +7402,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Search input with suggest and clear button.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_search_demo
+         */
         class $mol_search extends $.$mol_search {
             anchor_content() {
                 return [
@@ -7161,6 +7568,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** State of arguments like `#foo=bar/xxx` or `?foo=bar&xxx` */
     class $mol_state_arg extends $mol_object {
         prefix;
         static href(next) {
@@ -7298,12 +7706,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Dynamic hyperlink. It can add, change or remove parameters. A link that leads to the current page has [mol_link_current] attribute set to true.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_link_demo
+         */
         class $mol_link extends $.$mol_link {
             uri_toggle() {
                 return this.current() ? this.uri_off() : this.uri();
@@ -7514,6 +7927,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -7534,6 +7948,8 @@ var $;
             maxHeight: per(100),
             boxSizing: 'border-box',
             color: $mol_theme.text,
+            // backdropFilter: blur( `3px` ), enforces layering
+            // zIndex: 0 ,
             ':focus': {
                 outline: 'none',
             },
@@ -7820,12 +8236,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Variant of [mol_book2](../book2.view.ts) which draws menu in side bar on opens one of taken spreads.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_book2_catalog_demo
+         */
         class $mol_book2_catalog extends $.$mol_book2_catalog {
             spread_current() {
                 return this.spread() === '' ? this.Spread_default() : this.Spread(this.spread());
@@ -7956,6 +8377,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Theme css variables
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_textarea_demo
+     */
     $.$bog_theme = $mol_style_prop('mol_theme', [
         'back',
         'background',
@@ -7972,6 +8397,10 @@ var $;
         'image',
         'spirit',
     ]);
+    /**
+     * Available theme names.
+     * Add new theme to theme.css and add its name here.
+     */
     $.$bog_theme_names = [
         '$mol_theme_giper_smash_dark',
         '$mol_theme_giper_smash_light',
@@ -8074,6 +8503,10 @@ var $;
             return false;
         return null;
     }
+    /**
+     * Switcher between light/dark themes (usually for `mol_theme_auto` plugin).
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_lights_demo
+     */
     function $mol_lights(next) {
         const arg = parse(this.$mol_state_arg.value('mol_lights'));
         const base = this.$mol_media.match('(prefers-color-scheme: light)');
@@ -8096,6 +8529,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -8106,9 +8540,11 @@ var $;
             themes_default() {
                 return this.$.$bog_theme_names;
             }
+            /** Stores current mode in localStorage. Defaults to 'system'. */
             mode(next) {
                 return this.$.$mol_state_local.value(`${this}.mode()`, next) ?? 'system';
             }
+            /** Cycles: system → light → dark → system (skips 'custom') */
             mode_next() {
                 const cycle = ['system', 'light', 'dark'];
                 const i = cycle.indexOf(this.mode());
@@ -8141,6 +8577,7 @@ var $;
                         return this.theme_light();
                     return themes[index % themes.length];
                 }
+                // system — follow browser preference
                 return this.$.$mol_lights() ? this.theme_light() : this.theme_dark();
             }
             theme_next() {
@@ -8151,6 +8588,7 @@ var $;
                 const i = cycle.indexOf(this.mode());
                 this.mode(cycle[i <= 0 ? cycle.length - 1 : i - 1]);
             }
+            /** Called by picker. Sets mode to light/dark or custom for themed palettes. */
             theme_set(index) {
                 const themes = this.themes();
                 if (themes.length === 0)
@@ -8223,6 +8661,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -8346,12 +8785,16 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Theme picker popup with search and list
+         */
         class $bog_theme_picker extends $.$bog_theme_picker {
             theme_rows() {
                 const themes = this.filtered_themes();
@@ -8361,6 +8804,7 @@ var $;
                 const query = this.query().toLowerCase().trim();
                 const themes = this.$.$bog_theme_names;
                 const filtered = query ? themes.filter(name => name.toLowerCase().includes(query)) : [...themes];
+                // Reset focused index when filter changes
                 const current = this.focused_index();
                 if (current >= filtered.length) {
                     this.focused_index(-1);
@@ -8382,12 +8826,14 @@ var $;
                 if (global_index !== -1) {
                     this.theme_auto().theme_set(global_index);
                 }
+                // Close popup
                 this.close();
                 return null;
             }
             theme_hover(index, event) {
                 if (!event)
                     return null;
+                // Update focused index on hover (this will apply preview via theme_focused)
                 this.focused_index(index);
                 const themes = this.filtered_themes();
                 const theme_name = themes[index];
@@ -8406,6 +8852,7 @@ var $;
                     case 'ArrowDown':
                         event.preventDefault();
                         event.stopPropagation();
+                        // If focus is on search (-1), start from first item
                         if (current === -1) {
                             current = 0;
                         }
@@ -8418,6 +8865,7 @@ var $;
                     case 'ArrowUp':
                         event.preventDefault();
                         event.stopPropagation();
+                        // If focus is on search (-1), start from last item
                         if (current === -1) {
                             current = themes.length - 1;
                         }
@@ -8447,6 +8895,7 @@ var $;
                 if (global_index !== -1) {
                     this.theme_auto().theme_set(global_index);
                 }
+                // Close popup
                 this.close();
             }
             preview_theme(index) {
@@ -8505,6 +8954,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_weather_night) = class $mol_icon_weather_night extends ($.$mol_icon) {
 		path(){
@@ -8516,6 +8966,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_monitor) = class $mol_icon_monitor extends ($.$mol_icon) {
 		path(){
@@ -8526,6 +8977,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_theme_toggle) = class $bog_theme_toggle extends ($.$mol_pop) {
@@ -8643,6 +9095,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -8743,6 +9196,7 @@ var $;
                         search.focused(true);
                     }
                     catch (e) {
+                        // Ignore focus errors
                     }
                 }, 100);
             }
@@ -8823,12 +9277,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * The [plugin](../../plugin/readme.md) which defines theme based on [mol_lights](../../lights/readme.md).
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_lights_demo
+         */
         class $mol_theme_auto extends $.$mol_theme_auto {
             theme() {
                 return this.$.$mol_lights() ? this.light() : this.dark();
@@ -8898,6 +9357,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -9023,14 +9483,19 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_frame_demo
+         */
         class $mol_frame extends $.$mol_frame {
             window() {
+                // if( this.html() ) return ( this.dom_node() as HTMLIFrameElement ).contentWindow!
                 return super.window();
             }
             allow() {
@@ -9075,6 +9540,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -9131,6 +9597,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_trash_can_outline) = class $mol_icon_trash_can_outline extends ($.$mol_icon) {
 		path(){
@@ -9141,6 +9608,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_icon_script) = class $mol_icon_script extends ($.$mol_icon) {
@@ -9153,6 +9621,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_script_text) = class $mol_icon_script_text extends ($.$mol_icon) {
 		path(){
@@ -9163,6 +9632,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_link_source) = class $mol_link_source extends ($.$mol_link) {
@@ -9183,6 +9653,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_gift) = class $mol_icon_gift extends ($.$mol_icon) {
 		path(){
@@ -9194,6 +9665,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_gift_outline) = class $mol_icon_gift_outline extends ($.$mol_icon) {
 		path(){
@@ -9204,6 +9676,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_link_donate) = class $mol_link_donate extends ($.$mol_link) {
@@ -9224,6 +9697,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_face) = class $mol_icon_face extends ($.$mol_icon) {
 		path(){
@@ -9235,6 +9709,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_face_agent) = class $mol_icon_face_agent extends ($.$mol_icon) {
 		path(){
@@ -9245,6 +9720,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_link_support) = class $mol_link_support extends ($.$mol_link) {
@@ -9264,6 +9740,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_check) = class $mol_check extends ($.$mol_button_minor) {
@@ -9345,12 +9822,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Checkbox UI component. See Variants for more concrete implementations.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_check_box_demo
+         */
         class $mol_check extends $.$mol_check {
             click(next) {
                 const event = next ? $mol_dom_event.wrap(next) : null;
@@ -9390,6 +9872,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_brightness_4) = class $mol_icon_brightness_4 extends ($.$mol_icon) {
 		path(){
@@ -9400,6 +9883,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_lights_toggle) = class $mol_lights_toggle extends ($.$mol_check_icon) {
@@ -9428,12 +9912,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Toggle for Switcher between light/dark themes (usually for `mol_theme_auto` plugin).
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_lights_demo
+         */
         class $mol_lights_toggle extends $.$mol_lights_toggle {
             lights(next) {
                 return this.$.$mol_lights(next);
@@ -9465,6 +9954,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -9510,6 +10000,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_text_code_token) = class $mol_text_code_token extends ($.$mol_dimmer) {
 		type(){
@@ -9541,6 +10032,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -9663,6 +10155,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Creates lexer by dictionary of lexems. Lexem that started first wins. Then lexem that declared earlier wins. Use regexp capture to take parts of token. */
     class $mol_syntax2 {
         lexems;
         constructor(lexems) {
@@ -9734,6 +10227,8 @@ var $;
         'code': /```(.+?)```|;;(.+?);;|`(.+?)`/,
         'insert': /\+\+(.+?)\+\+/,
         'delete': /~~(.+?)~~|--(.+?)--/,
+        // 'remark' : /(\()(.+?)(\))/ ,
+        // 'quote' : /(")(.+?)(")/ ,
         'embed': /""(?:(.*?)\\)?(.*?)""/,
         'link': /\\\\(?:(.*?)\\)?(.*?)\\\\/,
         'image-link': /!\[([^\[\]]*?)\]\((.*?)\)/,
@@ -9763,6 +10258,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -9779,6 +10275,7 @@ var $;
             tokens(path) {
                 const tokens = [];
                 const text = (path.length > 0)
+                    // @FIXME: this logic compatible only with `string`
                     ? this.tokens(path.slice(0, path.length - 1))[path[path.length - 1]].found.slice(1, -1)
                     : this.text();
                 this.syntax().tokenize(text, (name, found, chunks) => {
@@ -9912,6 +10409,7 @@ var $;
 
 ;
 "use strict";
+// @ts-ignore
 var $node = $node || {};
 
 ;
@@ -9932,6 +10430,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_clipboard_outline) = class $mol_icon_clipboard_outline extends ($.$mol_icon) {
 		path(){
@@ -9942,6 +10441,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_button_copy) = class $mol_button_copy extends ($.$mol_button_minor) {
@@ -10002,12 +10502,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Button copy text() value to clipboard
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_button_demo
+         */
         class $mol_button_copy extends $.$mol_button_copy {
             data() {
                 return Object.fromEntries(this.blobs().map(blob => [blob.type, blob]));
@@ -10122,12 +10627,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Code visualizer.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_text_code_demo
+         */
         class $mol_text_code extends $.$mol_text_code {
             render_visible_only() {
                 return this.$.$mol_support_css_overflow_anchor();
@@ -10266,6 +10776,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_chevron) = class $mol_icon_chevron extends ($.$mol_icon) {
 		path(){
@@ -10276,6 +10787,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_check_expand) = class $mol_check_expand extends ($.$mol_check) {
@@ -10313,12 +10825,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Expander for trees, lists, etc
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_check_expand_demo
+         */
         class $mol_check_expand extends $.$mol_check_expand {
             level_style() {
                 return `${this.level() * 1 - 1}rem`;
@@ -10543,6 +11060,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -10748,6 +11266,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -10821,6 +11340,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -10830,6 +11350,7 @@ var $;
         class $mol_link_iconed extends $.$mol_link_iconed {
             icon() {
                 return `https://favicon.yandex.net/favicon/${this.host()}?color=0,0,0,0&size=32&stub=1`;
+                // return `https://api.faviconkit.com/${ this.host() }/16`
             }
             host() {
                 const base = this.$.$mol_state_arg.href();
@@ -10882,6 +11403,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_embed_service) = class $mol_embed_service extends ($.$mol_check) {
@@ -10940,6 +11462,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -10973,6 +11496,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -11013,6 +11537,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -11049,6 +11574,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -11134,6 +11660,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -11230,12 +11757,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Component which expands any content on title click.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_expander_demo
+         */
         class $mol_expander extends $.$mol_expander {
             rows() {
                 return [
@@ -11565,12 +12097,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Markdown visualizer.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_text_demo
+         */
         class $mol_text extends $.$mol_text {
             flow_tokens() {
                 const tokens = [];
@@ -11917,6 +12454,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_button_open) = class $mol_button_open extends ($.$mol_button_minor) {
 		Icon(){
@@ -11986,6 +12524,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -12000,12 +12539,17 @@ var $;
                     return files;
                 }
                 catch (error) {
+                    // Calling actions from catch section, if throwing promise breaks idempotency
                     Promise.resolve().then(() => this.status([error]));
                     $mol_fail_hidden(error);
                 }
             }
         }
         $$.$mol_button_open = $mol_button_open;
+        /**
+         * File open button
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_button_demo
+         */
         class $mol_button_open_native extends $.$mol_button_open_native {
             dom_node() {
                 return super.dom_node();
@@ -12084,12 +12628,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Component that helps to upload files to server.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_attach_demo
+         */
         class $mol_attach extends $.$mol_attach {
             attach_new(files) {
                 this.items([
@@ -12291,12 +12840,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * An input field for entering multiline text.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_textarea_demo
+         */
         class $mol_textarea extends $.$mol_textarea {
             indent_inc() {
                 let text = this.value();
@@ -12403,6 +12957,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_bar) = class $mol_bar extends ($.$mol_view) {};
 
@@ -12417,6 +12972,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_chevron_left) = class $mol_icon_chevron_left extends ($.$mol_icon) {
 		path(){
@@ -12428,6 +12984,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_chevron_right) = class $mol_icon_chevron_right extends ($.$mol_icon) {
 		path(){
@@ -12438,6 +12995,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_paginator) = class $mol_paginator extends ($.$mol_bar) {
@@ -12510,12 +13068,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Paginator UI component
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_paginator_demo
+         */
         class $mol_paginator extends $.$mol_paginator {
             backward(event) {
                 if (event.defaultPrevented)
@@ -12564,6 +13127,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for record of given fields with by its runtypes and returns expected type.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_record_demo
+     */
     function $mol_data_record(sub) {
         return $mol_data_setup((val) => {
             let res = {};
@@ -12598,6 +13165,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for equality to given value and returns expected type.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_const_demo
+     */
     function $mol_data_const(ref) {
         return $mol_data_setup((val) => {
             if ($mol_compare_deep(val, ref))
@@ -12612,6 +13183,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for string and returns string type.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_string_demo
+     */
     $.$mol_data_string = (val) => {
         if (typeof val === 'string')
             return val;
@@ -12623,6 +13198,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for some of given runtype or throws error.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_variant_demo
+     */
     function $mol_data_variant(...sub) {
         return $mol_data_setup((val) => {
             const errors = [];
@@ -12652,6 +13231,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for array of given runtype and returns expected type.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_array_demo
+     */
     function $mol_data_array(sub) {
         return $mol_data_setup((val) => {
             if (!Array.isArray(val))
@@ -12676,6 +13259,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for null or passing given runtype.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_nullable_demo
+     */
     function $mol_data_nullable(sub) {
         return $mol_data_setup((val) => {
             if (val === null)
@@ -12690,6 +13277,10 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /**
+     * Checks for undefined or passing given runtype.
+     * @see https://mol.hyoo.ru/#!section=demos/demo=mol_data_optional_demo
+     */
     function $mol_data_optional(sub, fallback) {
         return $mol_data_setup((val) => {
             if (val === undefined) {
@@ -12729,6 +13320,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    // Make new tokens: https://github.com/settings/personal-access-tokens/new?name=$mol_github_model&user_models=read
     $.$mol_github_model_keys = [
         '11AADME3A07jh1teLjee8r_O7MKyAF8rbdIlhk4OwsJHaCnh4CjDNxn1nLNAvW2Hy6OSTIYABWQyp0rOHt',
         '11AADME3A0q6w8EFz9G9aa_byqEpTuWUa63PKoSAwN1eVi2GyGJ4SxYhm9OhAc2DCTANK2ULBQpQgUu6D9',
@@ -12782,7 +13374,11 @@ var $;
         '11AZC2M3A0yK6fYUgjj79M_5yu4OE4RdeFk8IoY3kcOC1xemTvjB1B8tOzA1KPmqQSX37EDQIOIuRjf9jF',
     ].map(str => `github_pat_${str}`);
     $.$mol_github_model_polyglots = [
-        'openai/gpt-4.1-mini',
+        // 'openai/gpt-4.1', // 50/D too slow
+        // 'openai/gpt-4o', // 50/D bad resp
+        'openai/gpt-4.1-mini', // 150/D
+        // 'openai/gpt-4o-mini', // 150/D bad resp
+        // 'openai/gpt-4.1-nano', // 150/D bad resp
     ];
     const Text = $mol_data_record({
         type: $mol_data_const('text'),
@@ -12818,6 +13414,7 @@ var $;
     });
     const Tool = $mol_data_record({
         role: $mol_data_const('tool'),
+        // name: $mol_data_string,
         tool_call_id: $mol_data_string,
         content: Content,
     });
@@ -12839,39 +13436,55 @@ var $;
             return { type: 'image_url', image_url: { url: val } };
         return { type: 'text', text: val };
     }
+    /**
+     * Github hosted LLM API.
+     */
     class $mol_github_model extends $mol_object {
+        // STATIC STATE
+        /** Model names from https://github.com/marketplace/models */
         names() {
             return this.$.$mol_github_model_polyglots;
         }
+        /** System rules */
         rules() {
             return '';
         }
+        /** List of callable functions */
         tools() {
             return new Map();
         }
+        // DYNAMIC STATE
+        /** Actual system state */
         state(next) {
             $mol_wire_solid();
             return next ?? [];
         }
+        /** Additional model query params */
         params(next) {
             $mol_wire_solid();
             return next ?? {};
         }
+        /** Dialog history */
         history(next) {
             $mol_wire_solid();
             return next ?? [];
         }
+        // ACTIONS
+        /** Independent copy of current state. */
         fork() {
             const fork = $mol_github_model.make({
+                // static state
                 names: $mol_const(this.names()),
                 rules: $mol_const(this.rules()),
                 tools: $mol_const(this.tools()),
                 state: () => this.state(),
             });
+            // dynamic state
             fork.params(this.params());
             fork.history(this.history());
             return fork;
         }
+        /** One-shot stateless prompting */
         shot(prompt, context, params) {
             const fork = this.fork();
             if (params)
@@ -12881,6 +13494,7 @@ var $;
             fork.ask(prompt);
             return fork.response();
         }
+        /** Add user prompt */
         ask(chunks) {
             this.history([
                 ...this.history(),
@@ -12891,6 +13505,7 @@ var $;
             ]);
             return this;
         }
+        /** Add assistant context */
         tell(chunks) {
             this.history([
                 ...this.history(),
@@ -12901,6 +13516,7 @@ var $;
             ]);
             return this;
         }
+        /** Add tools answer */
         answer(id, chunks) {
             const history = this.history();
             const index = 1 + history.findIndex(msg => msg.role === 'tool' && msg.tool_call_id === id);
@@ -12917,6 +13533,7 @@ var $;
             ]);
             return this;
         }
+        // INFERENCE
         request_body(model) {
             return JSON.stringify({
                 model,
@@ -12949,6 +13566,7 @@ var $;
                 body: this.request_body(model)
             }));
         }
+        /** Last response from LLM */
         response() {
             const history = this.history();
             const last = history.at(-1);
@@ -12971,7 +13589,7 @@ var $;
                         if (!resp)
                             return $mol_fail_hidden(error);
                         if (resp.code() === 429)
-                            continue;
+                            continue; // rate limit
                         if (resp.code() === 400) {
                             const message = RespFail(resp.json()).error.message;
                             this.history([...history, { role: 'system', content: '📛 ' + message }]);
@@ -13060,6 +13678,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$giper_bot) = class $giper_bot extends ($.$mol_book2) {
@@ -13325,6 +13944,7 @@ var $;
 "use strict";
 var $;
 (function ($) {
+    /** Image processing. */
     class $mol_picture extends $mol_object2 {
         canvas;
         constructor(canvas) {
@@ -13416,6 +14036,7 @@ var $;
     const blacklist = new Set([
         '//cse.google.com/adsense/search/async-ads.js'
     ]);
+    /** Installs service worker proxy, which caches all requests and respond from cache on http errors. */
     function $mol_offline_web() {
         if (typeof window === 'undefined') {
             self.addEventListener('install', (event) => {
@@ -13423,6 +14044,7 @@ var $;
                 self.skipWaiting();
             });
             self.addEventListener('activate', (event) => {
+                // caches.delete( '$mol_offline' )
                 ;
                 self.clients.claim();
                 $$.$mol_log3_done({
@@ -13432,6 +14054,7 @@ var $;
             });
             self.addEventListener('fetch', (event) => {
                 const request = event.request;
+                // console.log( 'FETCH', request.mode, request.cache, request.url )
                 if (blacklist.has(request.url.replace(/^https?:/, ''))) {
                     return event.respondWith(new Response(null, {
                         status: 418,
@@ -13453,11 +14076,15 @@ var $;
                     return response.clone();
                 });
                 const enrich = (response) => {
+                    // console.log( 'ENRICH', response.status, response.url )
                     if (!response.status)
                         return response;
                     const headers = new Headers(response.headers);
                     headers.set("$mol_offline", "");
-                    headers.set("Origin-Agent-Cluster", "?1");
+                    headers.set("Origin-Agent-Cluster", "?1"); // prevent thread sharing
+                    // headers.set( "Cross-Origin-Embedder-Policy", "credentialless" )
+                    // headers.set( "Cross-Origin-Resource-Policy", "cross-origin" )
+                    // headers.set( "Cross-Origin-Opener-Policy", "same-origin" )
                     return new Response(response.body, {
                         status: response.status,
                         statusText: response.statusText,
@@ -13530,6 +14157,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -13567,7 +14195,7 @@ var $;
                 const item = this.history()[index];
                 let text = [item.message, ...item.files.map(item => `""` + item + `""`)].join('\n');
                 if ('`#>|='.includes(text[0]))
-                    text = '\n' + text;
+                    text = '\n' + text; // markdown blocks
                 return this.message_name(index) + ' ' + text;
             }
             message_name(index) {
@@ -13590,6 +14218,7 @@ var $;
             rules() {
                 return super.rules()
                     .replaceAll('{lang}', this.$.$mol_locale.lang());
+                // .replaceAll( '{document}', this.result().replaceAll( /^/gm, '\t' ) )
             }
             context() {
                 return this.rules();
@@ -13776,12 +14405,16 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_gallery_demo
+         */
         class $mol_gallery extends $.$mol_gallery {
             sub() {
                 const items = this.items();
@@ -13858,12 +14491,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Represents a common card. It can has several statuses at bottom line.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_card_demo/readme
+         */
         class $mol_card extends $.$mol_card {
             rows() {
                 return [
@@ -13959,6 +14597,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -13969,6 +14608,7 @@ var $;
             query(next) {
                 return next ?? '';
             }
+            // Helpers list
             helper_titles() {
                 return ['Личный юрист', 'Личный бухгалтер', 'Финансовый консультант', 'Карьерный коуч'];
             }
@@ -14130,6 +14770,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -14243,12 +14884,18 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Pop-up display and hide by mouse click, also hide by unfocus.
+         * Based on [mol_pop](https://mol.hyoo.ru/#!section=demos/demo=mol_pop_demo) component.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_pick_demo
+         */
         class $mol_pick extends $.$mol_pick {
             keydown(event) {
                 if (!this.trigger_enabled())
@@ -14284,6 +14931,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_select) = class $mol_select extends ($.$mol_pick) {
@@ -14422,12 +15070,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Allow user to select value from various options and displays current value.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_select_demo_colors
+         */
         class $mol_select extends $.$mol_select {
             filter_pattern(next) {
                 this.focused();
@@ -14714,6 +15367,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -14770,6 +15424,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_button_major) = class $mol_button_major extends ($.$mol_button_minor) {
 		theme(){
@@ -14787,6 +15442,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_dobro_app_settings) = class $bog_dobro_app_settings extends ($.$mol_page) {
@@ -14852,6 +15508,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -14938,6 +15595,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_information) = class $mol_icon_information extends ($.$mol_icon) {
 		path(){
@@ -14949,6 +15607,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_information_outline) = class $mol_icon_information_outline extends ($.$mol_icon) {
 		path(){
@@ -14959,6 +15618,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_dobro_app_vaka) = class $bog_dobro_app_vaka extends ($.$mol_page) {
@@ -15167,6 +15827,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -15174,36 +15835,45 @@ var $;
     var $$;
     (function ($$) {
         class $bog_dobro_app_vaka_item extends $.$bog_dobro_app_vaka_item {
+            // Данные вакансии передаются извне
             vacancy(next) {
                 return next ?? null;
             }
+            // Название вакансии
             title() {
                 const vacancy = this.vacancy();
                 return vacancy?.name ?? 'Без названия';
             }
+            // Ссылка на вакансию (используем alternate_url)
             url() {
                 const vacancy = this.vacancy();
                 return vacancy?.alternate_url ?? '#';
             }
+            // Метаинформация (работодатель, регион, опыт, график)
             meta() {
                 const vacancy = this.vacancy();
                 if (!vacancy)
                     return '';
                 const parts = [];
+                // Работодатель
                 if (vacancy.employer?.name) {
                     parts.push(`🏢 ${vacancy.employer.name}`);
                 }
+                // Регион
                 if (vacancy.area?.name) {
                     parts.push(`📍 ${vacancy.area.name}`);
                 }
+                // Опыт работы
                 if (vacancy.experience?.name) {
                     parts.push(`💼 ${vacancy.experience.name}`);
                 }
+                // График работы
                 if (vacancy.schedule?.name) {
                     parts.push(`⏰ ${vacancy.schedule.name}`);
                 }
                 return parts.join(' • ');
             }
+            // Зарплата
             salary() {
                 const vacancy = this.vacancy();
                 if (!vacancy?.salary)
@@ -15222,6 +15892,7 @@ var $;
                 }
                 return '💰 Зарплата не указана';
             }
+            // Преобразование кода валюты в символ
             currency_symbol(code) {
                 const symbols = {
                     RUR: '₽',
@@ -15238,6 +15909,7 @@ var $;
                 };
                 return symbols[code] ?? code;
             }
+            // Описание вакансии (snippet)
             snippet() {
                 const vacancy = this.vacancy();
                 if (!vacancy?.snippet)
@@ -15257,18 +15929,23 @@ var $;
                 }
                 return parts.join('\n\n');
             }
+            // Очистка HTML-тегов из текста и форматирование
             clean_html(text) {
                 if (!text)
                     return '';
                 return (text
+                    // Заменяем highlighttext на жирный текст
                     .replace(/<highlighttext>/gi, '**')
                     .replace(/<\/highlighttext>/gi, '**')
+                    // Удаляем все остальные HTML теги
                     .replace(/<[^>]+>/g, '')
+                    // Декодируем HTML entities
                     .replace(/&nbsp;/g, ' ')
                     .replace(/&quot;/g, '"')
                     .replace(/&amp;/g, '&')
                     .replace(/&lt;/g, '<')
                     .replace(/&gt;/g, '>')
+                    // Убираем лишние пробелы
                     .replace(/\s+/g, ' ')
                     .trim());
             }
@@ -15295,46 +15972,59 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        // Маппинг названий регионов на их ID в API HH.ru
         const AREA_MAP = {
             Россия: '113',
             Москва: '1',
             'Санкт-Петербург': '2',
         };
         class $bog_dobro_app_vaka extends $.$bog_dobro_app_vaka {
+            // Текущий поисковый запрос
             query(next) {
                 return next ?? 'программист';
             }
+            // Выбранный регион
             area_name(next) {
                 return next ?? 'Россия';
             }
+            // Получение ID региона для API
             area_id() {
                 return AREA_MAP[this.area_name()] ?? '113';
             }
+            // Статус загрузки
             loading_status(next) {
                 return next ?? null;
             }
+            // Триггер для принудительного обновления
             update_trigger(next) {
                 return next ?? 0;
             }
             search(next) {
                 if (next !== undefined) {
+                    // Увеличиваем счётчик для обновления
                     this.update_trigger(this.update_trigger() + 1);
                 }
                 return next;
             }
+            // Получение данных о вакансиях с API
+            // Service Worker автоматически кэширует GET запросы через $mol_offline
             vacancies_data() {
+                // Подписываемся на триггер обновления
                 this.update_trigger();
                 const query = this.query();
                 const area = this.area_id();
+                // Если запрос пустой, не делаем запрос
                 if (!query || !query.trim()) {
                     return { items: [], found: 0, pages: 0, page: 0, per_page: 0 };
                 }
+                // Формируем URL для запроса
                 const params = new URLSearchParams({
                     text: query.trim(),
                     area: area,
@@ -15352,6 +16042,7 @@ var $;
                         timestamp: new Date().toISOString(),
                     });
                     const startTime = performance.now();
+                    // Используем force-cache для кеширования GET запросов в HTTP-кеше браузера
                     const response = this.$.$mol_fetch.json(url, {
                         cache: 'force-cache',
                     });
@@ -15368,6 +16059,7 @@ var $;
                     return response;
                 }
                 catch (error) {
+                    // Игнорируем ошибки при отмене запроса
                     if (error && typeof error === 'object' && 'message' in error) {
                         const errMsg = error.message || '';
                         if (!errMsg.includes('aborted')) {
@@ -15383,6 +16075,7 @@ var $;
                     return { items: [], found: 0, pages: 0, page: 0, per_page: 0 };
                 }
             }
+            // Список ID вакансий для отображения
             vacancy_ids() {
                 try {
                     const data = this.vacancies_data();
@@ -15395,6 +16088,7 @@ var $;
                     return [];
                 }
             }
+            // Получение конкретной вакансии по ID
             vacancy(id) {
                 try {
                     const data = this.vacancies_data();
@@ -15407,15 +16101,18 @@ var $;
                     return null;
                 }
             }
+            // Генерация строк для отображения в списке
             vacancy_rows() {
                 const ids = this.vacancy_ids();
                 return ids.map(id => this.Row(id));
             }
+            // Переопределяем Row для передачи данных вакансии
             Row(id) {
                 const row = new this.$.$bog_dobro_app_vaka_item();
                 row.vacancy = () => this.vacancy(id);
                 return row;
             }
+            // Сообщение для пустого состояния
             empty_message() {
                 const data = this.vacancies_data();
                 const query = this.query();
@@ -15427,6 +16124,7 @@ var $;
                 }
                 return '';
             }
+            // Статистика поиска
             stats_message() {
                 const data = this.vacancies_data();
                 if (!data || data.items.length === 0)
@@ -15595,6 +16293,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_check_list) = class $mol_check_list extends ($.$mol_view) {
 		option_checked(id, next){
@@ -15648,12 +16347,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * List of checkboxes
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_check_list_demo
+         */
         class $mol_check_list extends $.$mol_check_list {
             options() {
                 return {};
@@ -15710,12 +16414,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Buttons which switching the state
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_switch_demo
+         */
         class $mol_switch extends $.$mol_switch {
             value(next) {
                 return $mol_state_session.value(`${this}.value()`, next) ?? '';
@@ -15765,12 +16474,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * The component which arrange content in multiple tabs.
+         * @seehttps://mol.hyoo.ru/#!section=demos/demo=mol_deck_demo
+         */
         class $mol_deck extends $.$mol_deck {
             current(next) {
                 return $mol_state_session.value(`${this}.current()`, next) || '0';
@@ -15820,6 +16534,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -15881,6 +16596,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_icon_cards_heart) = class $mol_icon_cards_heart extends ($.$mol_icon) {
 		path(){
@@ -15891,6 +16607,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_ainews_app_filters) = class $bog_ainews_app_filters extends ($.$bog_ainews_app_page) {
@@ -15995,6 +16712,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -16040,6 +16758,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 	($.$mol_check_box) = class $mol_check_box extends ($.$mol_check) {
 		Icon(){
@@ -16059,6 +16778,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_number) = class $mol_number extends ($.$mol_view) {
@@ -16204,12 +16924,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Component for entering, incrementing and decrementing numeric values.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_number_demo
+         */
         class $mol_number extends $.$mol_number {
             value_limited(val) {
                 if (Number.isNaN(val))
@@ -16259,30 +16984,43 @@ var $;
                 }
             }
             value_string(next) {
+                // Вытягиваем value
+                // Если кто-то поменяет из вне value, value_string надо обновить
                 const current = this.round(this.value_limited());
                 if (next === undefined)
                     return current;
                 const precision = this.precision_view();
+                // Точку в конце поставить нельзя, если precision_view целое число > 0
                 if (precision - Math.floor(precision) === 0)
                     next = next.replace(/[.,]/g, '');
+                // Запятые меняем на точки, удаляем не-цифры и не-точки и лишние ноли в начале целой части.
+                // Минус получится ввести только в начале.
                 next = (this.value_min() < 0 && next.startsWith('-') ? '-' : '')
                     + next.replace(/,/g, '.').replace(/[^\d\.]/g, '').replace(/^0{2,}/, '0');
                 let dot_pos = next.indexOf('.');
                 if (dot_pos !== -1) {
                     const prev = $mol_wire_probe(() => this.value_string()) ?? '';
                     const dot_pos_prev = prev.indexOf('.');
+                    // Определяем где относительно предыдущей точки юзер поставил новую
                     if (dot_pos_prev === dot_pos)
                         dot_pos = next.lastIndexOf('.');
+                    // Из частей до и после новой точки старую точку удаляем
                     const frac = next.slice(dot_pos + 1).replace(/\./g, '');
+                    // Если точка идет первой, перед ней пишем 0, что бы форматирование выглядело нормально в mask
                     next = (next.slice(0, dot_pos) || '0').replace(/\./g, '') + '.' + frac;
                 }
+                // Оставляем старое значение в value есть сочетание, приводящие к NaN, например -.
                 if (Number.isNaN(Number(next)))
                     return next;
                 if (next.endsWith('.'))
                     return next;
                 if (next.endsWith('-'))
                     return next;
+                // Если пустая строка - сетим NaN
+                // Применяем округления.
                 this.value_limited(Number(next || Number.NaN));
+                // Возвращаем все-равно не нормализованное значение
+                // Иначе нельзя ввести будет 10, если min/max 5..10
                 return next;
             }
             dec_enabled() {
@@ -16315,6 +17053,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_ainews_app_settings) = class $bog_ainews_app_settings extends ($.$bog_ainews_app_page) {
@@ -16498,6 +17237,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -16535,9 +17275,16 @@ var $;
                 return ($mol_state_local.value('open_links_in_new_tabs_check_box_value') ??
                     super.open_links_in_new_tabs_check_box_value());
             }
+            // @$mol_mem
+            // font_size_value(next?:any){
+            // 	if(next !== undefined)
+            // 		return $mol_state_local.value("font_size_value", next);
+            // 	return $mol_state_local.value("font_size_value") ?? super.font_size_value()
+            // }
             deferredPrompt = null;
             auto() {
                 super.auto();
+                // Слушаем событие beforeinstallprompt
                 window.addEventListener('beforeinstallprompt', e => {
                     e.preventDefault();
                     this.deferredPrompt = e;
@@ -16545,6 +17292,7 @@ var $;
             }
             install() {
                 if (!this.deferredPrompt) {
+                    // Для ПК показываем инструкцию
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                     const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     if (isIOS) {
@@ -16568,7 +17316,9 @@ var $;
                     }
                     return;
                 }
+                // Показываем системный диалог установки
                 this.deferredPrompt.prompt();
+                // Ждем результат
                 this.deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
                         console.log('User accepted the install prompt');
@@ -16966,6 +17716,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -17004,12 +17755,15 @@ var $;
                         mediaContent?.getAttribute('url') ||
                         mediaThumbnail?.getAttribute('url') ||
                         '';
+                    // Если нет картинки в RSS тегах, ищем в description HTML
                     if (!image_src && description) {
+                        // Ищем <img src="...">
                         const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["']/i);
                         if (imgMatch) {
                             image_src = imgMatch[1];
                         }
                     }
+                    // Если всё ещё нет картинки, ищем ссылки на картинки в <a href="...">
                     if (!image_src && description) {
                         const linkMatch = description.match(/<a[^>]+href=["']([^"']+\.(jpg|jpeg|png|gif|webp))["']/i);
                         if (linkMatch) {
@@ -17028,13 +17782,16 @@ var $;
             cache_image(url) {
                 if (!url)
                     return url;
+                // Проверяем кеш
                 const cached = $mol_state_local.value(`img_cache_${url}`);
                 if (cached)
                     return cached;
+                // Загружаем синхронно через $mol_fetch
                 try {
                     $mol_wire_solid();
                     const response = $mol_fetch.response(url);
                     const arrayBuffer = response.buffer();
+                    // Конвертируем ArrayBuffer в base64
                     const buffer = new Uint8Array(arrayBuffer);
                     let binary = '';
                     const len = buffer.length;
@@ -17042,15 +17799,20 @@ var $;
                         binary += String.fromCharCode(buffer[i]);
                     }
                     const base64 = 'data:image/jpeg;base64,' + btoa(binary);
+                    // Очищаем старые изображения (оставляем только 30)
                     const cache_list_key = 'img_cache_list';
                     const cache_list = $mol_state_local.value(cache_list_key) || [];
+                    // Добавляем новый URL в начало списка
                     const updated_list = [url, ...cache_list.filter(u => u !== url)].slice(0, 30);
+                    // Удаляем изображения, которые вышли за пределы лимита
                     cache_list.forEach(old_url => {
                         if (!updated_list.includes(old_url)) {
                             $mol_state_local.value(`img_cache_${old_url}`, null);
                         }
                     });
+                    // Обновляем список
                     $mol_state_local.value(cache_list_key, updated_list);
+                    // Сохраняем в localStorage
                     $mol_state_local.value(`img_cache_${url}`, base64);
                     return base64;
                 }
@@ -17070,18 +17832,21 @@ var $;
             }
             request_articles_from_sources(source_url) {
                 $mol_wire_solid();
+                // Пробуем загрузить из localStorage
                 const cached = $mol_state_local.value(`feed_cache_${source_url}`);
                 if (cached) {
                     try {
                         const cache_data = JSON.parse(cached);
                         const cache_time = cache_data.timestamp || 0;
                         const now = Date.now();
-                        const cache_ttl = 60 * 60 * 1000;
+                        const cache_ttl = 60 * 60 * 1000; // 1 час в миллисекундах
+                        // Если кеш свежий, возвращаем его
                         if (now - cache_time < cache_ttl) {
                             return cache_data.articles;
                         }
                     }
                     catch (e) {
+                        // Если не удалось распарсить, продолжаем загрузку
                     }
                 }
                 const payload = new URLSearchParams({
@@ -17089,15 +17854,20 @@ var $;
                 });
                 const xml_doc = $mol_fetch.xml($$.$bog_ainews_app_feed_proxy_url + '?' + payload.toString());
                 const articles_list = this.parse_rss(xml_doc);
+                // Очищаем старые фиды (оставляем только 20)
                 const feed_cache_list_key = 'feed_cache_list';
                 const feed_cache_list = $mol_state_local.value(feed_cache_list_key) || [];
+                // Добавляем новый URL в начало списка
                 const updated_feed_list = [source_url, ...feed_cache_list.filter(u => u !== source_url)].slice(0, 20);
+                // Удаляем фиды, которые вышли за пределы лимита
                 feed_cache_list.forEach(old_url => {
                     if (!updated_feed_list.includes(old_url)) {
                         $mol_state_local.value(`feed_cache_${old_url}`, null);
                     }
                 });
+                // Обновляем список
                 $mol_state_local.value(feed_cache_list_key, updated_feed_list);
+                // Сохраняем в localStorage с временной меткой
                 const cache_data = {
                     timestamp: Date.now(),
                     articles: articles_list,
@@ -17141,6 +17911,7 @@ var $;
                     return articles_list.filter((item) => new RegExp(this.search_word(), 'ig').test(item.title));
                 return articles_list;
             }
+            // calculate persent of cyrilic text on text
             is_need_translate(text) {
                 function remove_from_string(words, str) {
                     return words.reduce((result, word) => result.replace(new RegExp(word, 'gi'), ''), str);
@@ -17171,6 +17942,7 @@ var $;
                     return next;
                 return false;
             }
+            // articles fields
             article_title(article) {
                 const should_translate = (this.app_settings().is_enable_auto_translate() && this.is_need_translate(article.title)) ||
                     this.force_translate(article);
@@ -17207,9 +17979,11 @@ var $;
                 const src = article.image_src || '';
                 if (src.trim().length === 0)
                     return [];
+                // Проверяем, что это изображение, а не видео
                 if (src.includes('.mp4') || src.includes('/mp4/') || src.includes('format/mp4')) {
                     return [];
                 }
+                // Возвращаем закешированную версию или загружаем
                 const cached = this.cache_image(src);
                 return cached ? [cached] : [];
             }
@@ -17236,12 +18010,15 @@ var $;
                     return next;
                 return false;
             }
+            // sources fileds
             sources(id, next) {
                 if (next !== undefined)
                     return $mol_state_local.value(id, next);
                 return $mol_state_local.value(id) ?? [];
             }
+            // tabs fields
             Categories() {
+                // console.log({aa: this.app_source().runtime_links()})
                 return Object.keys(this.app_source().runtime_links())
                     .filter(category => $mol_state_local.value(category) != null &&
                     $mol_state_local.value(category).length > 0)
@@ -17445,7 +18222,7 @@ var $;
         $$.$bog_ainews_app_feed = $bog_ainews_app_feed;
         class $bog_ainews_app_feed_title extends $.$bog_ainews_app_feed_title {
             font_size_title() {
-                return $bog_ainews_app_settings_font_size_value();
+                return $bog_ainews_app_settings_font_size_value(); //$mol_state_local.value("font_size_value") ?? 7 //super.font_size_value()
             }
         }
         $$.$bog_ainews_app_feed_title = $bog_ainews_app_feed_title;
@@ -17458,6 +18235,7 @@ var $;
 (function ($) {
     const { rem } = $mol_style_unit;
     $mol_style_define($bog_ainews_app_feed, {
+        // Стили для карточек новостей (Article)
         Article: {
             background: {
                 color: $mol_theme.card,
@@ -17476,16 +18254,33 @@ var $;
                 transition: 'all 0.2s ease',
             },
         },
+        /*
+        // Заголовки новостей (Article_title)
+        Article_title: {
+            font: {
+                // size: rem(1.125),
+                weight: 600,
+            },
+            // lineHeight: '1.4',
+            // margin: {
+            // 	bottom: rem(0.5),
+            // },
+            color: $mol_theme.text,
+        },
+        */
+        // Описание/превью (Article_description)
         Article_description: {
             font: {
                 size: rem(0.875),
             },
             lineHeight: '1.5',
+            // color: $mol_theme.shade,
             color: $mol_theme.text,
             margin: {
                 bottom: rem(1),
             },
         },
+        // Ссылки на статьи (Article_link, Article_translated_link)
         Article_link: {
             font: {
                 size: rem(0.75),
@@ -17514,6 +18309,7 @@ var $;
                 size: rem(0.75),
             },
             color: $mol_theme.shade,
+            // textDecoration: 'none',
             margin: {
                 left: rem(1),
             },
@@ -17578,6 +18374,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -17596,6 +18393,7 @@ var $;
             }
             add_post(post) {
                 const current_list = this.app_source().custom_sources($$.$bog_ainews_app_favorites_key);
+                // skip if alrady added
                 if (current_list.includes(post)) {
                     return;
                 }
@@ -17633,6 +18431,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_ainews_app) = class $bog_ainews_app extends ($.$mol_book2_catalog) {
@@ -17726,6 +18525,7 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
@@ -17756,6 +18556,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$mol_select_list) = class $mol_select_list extends ($.$mol_view) {
@@ -17857,12 +18658,17 @@ var $;
 ;
 "use strict";
 
+
 ;
 "use strict";
 var $;
 (function ($) {
     var $$;
     (function ($$) {
+        /**
+         * Allow user to select value from various options and displays current value.
+         * @see https://mol.hyoo.ru/#!section=demos/demo=mol_select_demo_colors
+         */
         class $mol_select_list extends $.$mol_select_list {
             value(val) {
                 return super.value(val);
@@ -17957,6 +18763,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 	($.$bog_ainews_app_sources) = class $bog_ainews_app_sources extends ($.$bog_ainews_app_page) {
@@ -18109,6 +18916,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
@@ -19163,14 +19971,17 @@ var $;
                 const custom_rss = this.custom_sources($bog_ainews_app_sources_custom_rss_feeds);
                 return { ...$bog_ainews_app_source_links, my: custom_rss };
             }
+            // tabs fields
             Categories() {
                 return Object.keys($bog_ainews_app_source_links).map(category => this.Category_page(category));
             }
             category_title(category) {
                 return category;
             }
+            // sources fileds
             suggestions(category) {
                 const urls = $bog_ainews_app_source_links[category];
+                // Преобразуем массив URL в объект {url: domain}
                 return urls.reduce((acc, url) => {
                     try {
                         const domain = new URL(url).hostname.replace('www.', '');
@@ -19182,6 +19993,7 @@ var $;
                     return acc;
                 }, {});
             }
+            // @$mol_mem_key
             sources(id, next) {
                 if (next !== undefined)
                     return $mol_state_local.value(id, next);
@@ -19199,6 +20011,7 @@ var $;
             add_custom_feed_click() {
                 const new_url = this.Add_feed_string().value();
                 const current_list = this.custom_sources($bog_ainews_app_sources_custom_rss_feeds);
+                // skip if alrady added
                 if (current_list.includes(new_url)) {
                     return;
                 }
@@ -19318,6 +20131,7 @@ var $;
 
 ;
 "use strict";
+
 
 ;
 "use strict";
