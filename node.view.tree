@@ -1205,6 +1205,8 @@ $mol_select $mol_pick
 	trigger_enabled <= enabled
 
 $mol_locale_select $mol_select
+	langs /string
+		\en
 
 $mol_labeler $mol_list
 	rows /
